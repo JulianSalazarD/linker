@@ -1,0 +1,52 @@
+{
+  "fields": [
+    {
+      "name": "nombre_cliente",
+      "type": "string",
+      "nullable": true,
+      "description": "Nombre completo del cliente"
+    },
+    {
+      "name": "direccion",
+      "type": "string",
+      "nullable": false,
+      "description": "Extraer EXCLUSIVAMENTE del nombre del archivo, antes del primer guión bajo (_)"
+    },
+    {
+      "name": "apartamento",
+      "type": "string",
+      "nullable": true,
+      "description": "Número o identificador del apartamento"
+    },
+    {
+      "name": "torre",
+      "type": "string",
+      "nullable": true,
+      "description": "Torre del edificio"
+    },
+    {
+      "name": "edificio",
+      "type": "string",
+      "nullable": true,
+      "description": "Nombre del edificio"
+    },
+    {
+      "name": "costo_total",
+      "type": "number",
+      "nullable": true,
+      "description": "Costo total del servicio en pesos colombianos, sin notación científica, como entero o decimal"
+    },
+    {
+      "name": "tipo_vehiculo",
+      "type": "string",
+      "nullable": false,
+      "default": "Tesla",
+      "description": "Tipo de vehículo utilizado. Usar 'Tesla' si no se menciona ninguno"
+    }
+  ],
+  "models": {
+    "gemini": "gemini-2.0-flash",
+    "glm": "glm-4-flash",
+    "minimax": "MiniMax-M7"
+  }
+}

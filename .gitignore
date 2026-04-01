@@ -1,0 +1,4 @@
+.venv
+pruebas/
+.env
+uv.lock
