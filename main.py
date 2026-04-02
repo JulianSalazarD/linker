@@ -26,7 +26,7 @@ from processor.extractor import extract
 from llm_client import extract_data
 
 
-def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> dict:
+def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> tuple[dict, dict]:
     content = extract(file_path, ocr=ocr)
     print(f"[extractor] {content.source}  texto={len(content.text)} chars  imgs={len(content.images)}")
 
@@ -35,7 +35,19 @@ def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> dict:
         file_path=content.source,
         provider=provider,
     )
-    return data
+
+    print("[LLM PROVIDER DATA] Datos extraídos")
+
+    price = extract_data(
+        text=content.text,
+        file_path=content.source,
+        provider=provider,
+        data_path="config/cotization.json",
+        prompt_path="config/prompt_cotizacion.md",
+    )
+
+
+    return data, price
 
 
 async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int) -> dict:
@@ -53,8 +65,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.confirm:
-        result = asyncio.run(run_with_confirm(args.file, args.provider, args.ocr, args.port))
+        result_data, result_price = asyncio.run(run_with_confirm(args.file, args.provider, args.ocr, args.port))
     else:
-        result = run(args.file, provider=args.provider, ocr=args.ocr)
+        result_data, result_price = run(args.file, provider=args.provider, ocr=args.ocr)
 
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print(json.dumps(result_data, ensure_ascii=False, indent=2))
+    print(json.dumps(result_price, ensure_ascii=False, indent=2))

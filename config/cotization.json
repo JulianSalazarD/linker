@@ -40,5 +40,10 @@
       "default": 250000,
       "description": "Costo del adaptador NEMA 14-50 en pesos colombianos"
     }
-  ]
+  ],
+  "models": {
+    "gemini": "gemini-2.0-flash",
+    "glm": "glm-4-flash",
+    "minimax": "MiniMax-M7"
+  }
 }
