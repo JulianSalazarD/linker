@@ -1,7 +1,7 @@
 {
   "fields": [
     {
-      "name": "nombre_cliente",
+      "name": "nombre",
       "type": "string",
       "nullable": true,
       "description": "Nombre completo del cliente"
@@ -16,25 +16,25 @@
       "name": "apartamento",
       "type": "string",
       "nullable": true,
-      "description": "Número o identificador del apartamento"
+      "description": "Número o identificador del apartamento incluir TORRE, o CASA O INT o EDIFICIO, si se menciona en el nombre del archivo o en el texto dado"
     },
     {
-      "name": "torre",
+      "name": "nombre_edificio",
       "type": "string",
       "nullable": true,
-      "description": "Torre del edificio"
-    },
-    {
-      "name": "edificio",
-      "type": "string",
-      "nullable": true,
-      "description": "Nombre del edificio"
+      "description": "Nombre del edificio o conjunto si se menciona"
     },
     {
       "name": "costo_total",
       "type": "number",
       "nullable": true,
       "description": "Costo total del servicio en pesos colombianos, sin notación científica, como entero o decimal"
+    },
+    {
+      "name": "ciudad_departtamento",
+      "type": "string",
+      "nullable": false,
+      "description": "Ciudad y departamento separados por coma, por defecto esar Bogotá D.C."
     },
     {
       "name": "tipo_vehiculo",
