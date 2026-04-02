@@ -9,12 +9,13 @@ from pathlib import Path
 from PIL import Image
 
 from processor.extractor import BaseExtractor, SourceContent, register_extractor
+from processor.ocr import ocr_image
 
 
 class DocxExtractor(BaseExtractor):
     supported = (".docx",)
 
-    def extract(self, source: str | Path) -> SourceContent:
+    def extract(self, source: str | Path, *, ocr: bool = False) -> SourceContent:
         from docx import Document
 
         doc = Document(str(source))
@@ -33,6 +34,10 @@ class DocxExtractor(BaseExtractor):
                     images.append(Image.open(io.BytesIO(rel.target_part.blob)))
                 except Exception:
                     pass
+
+        if ocr and images:
+            ocr_texts = [ocr_image(img) for img in images]
+            text = "\n".join(filter(None, [text] + ocr_texts))
 
         return SourceContent(
             text=text,

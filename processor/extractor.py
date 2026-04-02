@@ -29,7 +29,7 @@ class BaseExtractor(ABC):
     supported: tuple[str, ...] = ()
 
     @abstractmethod
-    def extract(self, source: str | Path) -> SourceContent:
+    def extract(self, source: str | Path, *, ocr: bool = False) -> SourceContent:
         """Lee la fuente y retorna un SourceContent."""
 
     def can_handle(self, source: str | Path) -> bool:
@@ -61,9 +61,9 @@ def get_extractor(source: str | Path) -> BaseExtractor:
     )
 
 
-def extract(source: str | Path) -> SourceContent:
+def extract(source: str | Path, *, ocr: bool = False) -> SourceContent:
     """Detecta el extractor adecuado y retorna el contenido."""
-    return get_extractor(source).extract(source)
+    return get_extractor(source).extract(source, ocr=ocr)
 
 
 if __name__ == "__main__":
