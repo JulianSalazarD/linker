@@ -10,4 +10,5 @@ dependencies = [
     "python-dotenv",
     "ipywidgets",
     "openpyxl>=3.1.5",
+    "docxtpl",
 ]

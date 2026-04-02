@@ -7,6 +7,13 @@
       "description": "Nombre completo del cliente"
     },
     {
+      "name": "is_male",
+      "type": "boolean",
+      "nullable": false,
+      "default": true,
+      "description": "true si el cliente es hombre, false si es mujer. Inferir del nombre."
+    },
+    {
       "name": "direccion",
       "type": "string",
       "nullable": false,
