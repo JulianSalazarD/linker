@@ -1,0 +1,44 @@
+{
+  "fields": [
+    {
+      "name": "costo_total",
+      "type": "number",
+      "nullable": true,
+      "description": "Costo total de la cotización en pesos colombianos"
+    },
+    {
+      "name": "metros",
+      "type": "number",
+      "nullable": true,
+      "description": "Metros totales de cableado"
+    },
+    {
+      "name": "tiene_wallbox",
+      "type": "boolean",
+      "nullable": true,
+      "default": false,
+      "description": "true si incluye wallbox"
+    },
+    {
+      "name": "costo_wallbox",
+      "type": "number",
+      "nullable": true,
+      "default": 250000,
+      "description": "Costo del wallbox en pesos colombianos"
+    },
+    {
+      "name": "tiene_nema_14_50",
+      "type": "boolean",
+      "nullable": true,
+      "default": false,
+      "description": "true si incluye adaptador NEMA 14-50"
+    },
+    {
+      "name": "costo_nema_14_50",
+      "type": "number",
+      "nullable": true,
+      "default": 250000,
+      "description": "Costo del adaptador NEMA 14-50 en pesos colombianos"
+    }
+  ]
+}
