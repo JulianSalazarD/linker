@@ -3,3 +3,4 @@ pruebas/
 .env
 uv.lock
 */__pycache__/
+config/*.docx

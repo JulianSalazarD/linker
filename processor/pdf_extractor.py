@@ -45,23 +45,3 @@ class PdfExtractor(BaseExtractor):
 
 register_extractor(PdfExtractor())
 
-
-if __name__ == "__main__":
-    import sys
-
-    _root = str(Path(__file__).parent.parent)
-    if _root not in sys.path:
-        sys.path.insert(0, _root)
-
-    from processor.extractor import extract as _extract
-
-    if len(sys.argv) < 2:
-        print("Uso: python processor/pdf_extractor.py <archivo.pdf> [--ocr]")
-        sys.exit(1)
-
-    _path = Path(sys.argv[1])
-    _ocr = "--ocr" in sys.argv
-    _content = _extract(_path, ocr=_ocr)
-    print(f"Texto extraído de {_path} (ocr={_ocr}):")
-    print(_content.text[:500] + ("..." if len(_content.text) > 500 else ""))
-    print(f"Imágenes encontradas: {len(_content.images)}")
