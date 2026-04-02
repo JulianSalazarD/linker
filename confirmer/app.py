@@ -28,12 +28,12 @@ load_dotenv(find_dotenv())
 
 from jinja2 import Environment, FileSystemLoader
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from processor.extractor import SourceContent, extract
 from llm_client import extract_data
-from confirmer.viewer import get_viewer_type, images_to_b64
+from confirmer.viewer import docx_to_html, get_viewer_type, images_to_b64
 
 # ---------------------------------------------------------------------------
 # Estado global de la sesión (una sesión a la vez)
@@ -72,11 +72,11 @@ async def index():
 @app.get("/document")
 async def document():
     assert _content is not None
-    return FileResponse(
-        path=_content.source,
-        media_type=_content.mime_type,
-        filename=Path(_content.source).name,
-    )
+    if "wordprocessingml" in _content.mime_type:
+        return HTMLResponse(docx_to_html(_content.source))
+    data = Path(_content.source).read_bytes()
+    return Response(content=data, media_type=_content.mime_type,
+                    headers={"Content-Disposition": "inline; filename=document.pdf"})
 
 
 @app.get("/images")

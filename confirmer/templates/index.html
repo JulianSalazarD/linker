@@ -18,12 +18,8 @@
   <div class="panel-doc">
     <h2>Documento</h2>
 
-    {% if viewer_type == "pdf" %}
+    {% if viewer_type in ("pdf", "docx") %}
       <iframe src="/document"></iframe>
-
-    {% elif viewer_type == "docx" %}
-      <div id="doc-text">{{ text }}</div>
-      <div id="img-grid"></div>
 
     {% else %}
       <div id="doc-text">{{ text }}</div>
