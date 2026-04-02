@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmar datos — {{ source | basename }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <h1>{{ source | basename }}</h1>
+  <span style="color:#94a3b8">{{ viewer_type | upper }}</span>
+</header>
+
+<div class="layout">
+
+  <!-- ── Panel izquierdo: documento ──────────────────── -->
+  <div class="panel-doc">
+    <h2>Documento</h2>
+
+    {% if viewer_type == "pdf" %}
+      <iframe src="/document"></iframe>
+
+    {% elif viewer_type == "docx" %}
+      <div id="doc-text">{{ text }}</div>
+      <div id="img-grid"></div>
+
+    {% else %}
+      <div id="doc-text">{{ text }}</div>
+    {% endif %}
+  </div>
+
+  <!-- ── Panel derecho: formulario ───────────────────── -->
+  <div class="panel-form">
+    <h2>Datos extraídos</h2>
+    <div id="fields"></div>
+    <div class="form-actions">
+      <button id="btn-add" class="btn btn-add">+ Agregar campo</button>
+      <button id="btn-confirm" class="btn btn-confirm">Confirmar</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Datos iniciales para app.js -->
+<script id="initial-data" type="application/json">
+{{ fields | tojson }}
+</script>
+<script src="/static/app.js"></script>
+</body>
+</html>

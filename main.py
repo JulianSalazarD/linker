@@ -1,17 +1,18 @@
 """
-Pipeline completo: extracción de archivo → inferencia con LLM.
+Pipeline completo: extracción de archivo → inferencia con LLM → confirmación.
 
 Uso:
-    python main.py <archivo> [--provider gemini|glm|minimax] [--ocr]
+    python main.py <archivo> [--provider gemini|glm|minimax] [--ocr] [--confirm] [--port 8000]
 
 Ejemplos:
     python main.py "pruebas/carera 26 No 50 - 47_260318_200729.docx"
-    python main.py "pruebas/Bogotá Cra 62#64-10_260327_191939.pdf" --ocr
-    python main.py "pruebas/Calle 182 # 45 45_260318_201415.docx" --provider gemini
+    python main.py "pruebas/Bogotá Cra 62#64-10_260327_191939.pdf" --ocr --confirm
+    python main.py "pruebas/Calle 182 # 45 45_260318_201415.docx" --provider gemini --confirm
 """
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import warnings
 
@@ -37,13 +38,23 @@ def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> dict:
     return data
 
 
+async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int) -> dict:
+    from confirmer.app import main_async
+    return await main_async(file_path, provider=provider, ocr=ocr, port=port)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extrae y estructura datos de un documento.")
     parser.add_argument("file", help="Ruta al archivo (.docx, .pdf, …)")
-    parser.add_argument("--provider", default="minimax", choices=["gemini", "glm", "minimax"],
-                        help="Proveedor LLM (default: minimax)")
-    parser.add_argument("--ocr", action="store_true", help="Aplicar OCR a imágenes/páginas escaneadas")
+    parser.add_argument("--provider", default="minimax", choices=["gemini", "glm", "minimax"])
+    parser.add_argument("--ocr", action="store_true")
+    parser.add_argument("--confirm", action="store_true", help="Abrir UI de confirmación en el navegador")
+    parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
 
-    result = run(args.file, provider=args.provider, ocr=args.ocr)
+    if args.confirm:
+        result = asyncio.run(run_with_confirm(args.file, args.provider, args.ocr, args.port))
+    else:
+        result = run(args.file, provider=args.provider, ocr=args.ocr)
+
     print(json.dumps(result, ensure_ascii=False, indent=2))
