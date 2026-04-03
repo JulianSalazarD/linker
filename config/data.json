@@ -17,13 +17,13 @@
       "name": "direccion",
       "type": "string",
       "nullable": false,
-      "description": "Extraer EXCLUSIVAMENTE del nombre del archivo, antes del primer guión bajo (_)"
+      "description": "Extraer EXCLUSIVAMENTE del nombre del archivo, antes del primer gui\u00f3n bajo (_)"
     },
     {
       "name": "apartamento",
       "type": "string",
       "nullable": true,
-      "description": "Número o identificador del apartamento incluir TORRE, o CASA O INT o EDIFICIO, si se menciona en el nombre del archivo o en el texto dado"
+      "description": "N\u00famero o identificador del apartamento incluir TORRE, o CASA O INT o EDIFICIO, si se menciona en el nombre del archivo o en el texto dado"
     },
     {
       "name": "nombre_edificio",
@@ -35,14 +35,14 @@
       "name": "ciudad_departtamento",
       "type": "string",
       "nullable": false,
-      "description": "Ciudad y departamento separados por coma, por defecto esar Bogotá D.C."
+      "description": "Ciudad y departamento separados por coma, por defecto esar Bogot\u00e1 D.C."
     },
     {
       "name": "tipo_vehiculo",
       "type": "string",
       "nullable": false,
       "default": "Tesla",
-      "description": "Tipo de vehículo utilizado. Usar 'Tesla' si no se menciona ninguno"
+      "description": "Tipo de veh\u00edculo utilizado. Usar 'Tesla' si no se menciona ninguno"
     }
   ],
   "models": {
@@ -50,5 +50,5 @@
     "glm": "glm-4-flash",
     "minimax": "MiniMax-M7"
   },
-  "number" : "111"
+  "number": "114"
 }
