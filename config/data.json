@@ -32,12 +32,6 @@
       "description": "Nombre del edificio o conjunto si se menciona"
     },
     {
-      "name": "costo_total",
-      "type": "number",
-      "nullable": true,
-      "description": "Costo total del servicio en pesos colombianos, sin notación científica, como entero o decimal"
-    },
-    {
       "name": "ciudad_departtamento",
       "type": "string",
       "nullable": false,
