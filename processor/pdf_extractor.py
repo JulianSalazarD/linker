@@ -3,7 +3,7 @@ Extractor para archivos .pdf.
 
 Estrategia:
   1. pdfplumber extrae texto nativo.
-  2. Si la página no tiene texto (PDF escaneado) y ocr=True, renderiza la página y aplica OCR.
+  2. Si la página no tiene texto (PDF escaneado), aplica OCR con tesseract.
   3. Detecta y extrae fotos embebidas dentro de páginas-imagen (ej. PDFs exportados desde hojas de cálculo).
 """
 from __future__ import annotations
@@ -103,6 +103,13 @@ class PdfExtractor(BaseExtractor):
                 if text.strip():
                     pages_text.append(text)
 
+                # Página escaneada: OCR para extraer texto
+                if not text.strip():
+                    pil_img = page.to_image(resolution=200).original
+                    ocr_text = ocr_image(pil_img)
+                    if ocr_text.strip():
+                        pages_text.append(ocr_text)
+
                 # Renderizar página y extraer fotos embebidas
                 pil_img = page.to_image(resolution=200).original
                 page_photos = _extract_photos_from_page(pil_img)
@@ -112,8 +119,6 @@ class PdfExtractor(BaseExtractor):
                 elif not text.strip():
                     # Sin texto ni fotos detectadas: guardar página completa
                     images.append(pil_img)
-                    if ocr:
-                        pages_text.append(ocr_image(pil_img))
 
         return SourceContent(
             text="\n".join(t for t in pages_text if t.strip()),

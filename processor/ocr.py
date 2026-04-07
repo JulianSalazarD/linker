@@ -21,7 +21,7 @@ def _read_easyocr(img: Image.Image) -> str:
     if _easyocr_reader is None:
         _easyocr_reader = easyocr.Reader(["es", "en"], gpu=False)
     results = _easyocr_reader.readtext(np.array(img.convert("RGB")), detail=0, paragraph=True)
-    return "\n".join(results)
+    return "\n".join(str(result) for result in results)
 
 
 def _read_pytesseract(img: Image.Image) -> str:
