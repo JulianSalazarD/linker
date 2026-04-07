@@ -1,5 +1,5 @@
 {
-    "1": "Instalación sobre braker AP 305, protección pin de corte. El consumo va dirigido al apartamento. No se afecta energía del edificio. Se cuenta con el voltaje suficiente para la carga a ejecutar. Validación capacidad de carga. Se informa que es suficiente para avanzar con el proceso de instalación sin generar perjuicios a la copropiedad.",
+    "1": "Instalación sobre braker AP {{ apartamento }}, protección pin de corte. El consumo va dirigido al apartamento. No se afecta energía del edificio. Se cuenta con el voltaje suficiente para la carga a ejecutar. Validación capacidad de carga. Se informa que es suficiente para avanzar con el proceso de instalación sin generar perjuicios a la copropiedad.",
     "n": "Traslado de cable # 8 en tubería EMT, trasado de red, transporte red por ducto.",
     "final" : "Traslado de cable # 8 en tubería EMT, trasado de red e instalación cargador pared( la imagen del cargador es de referencia )"
 }
