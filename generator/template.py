@@ -1,33 +1,29 @@
-"""Generación de documento .docx a partir de template y datos extraídos."""
-from __future__ import annotations
-
-import fcntl
-import json
 import math
+from docxtpl import DocxTemplate, RichText, InlineImage
+from docx.shared import Mm
+from io import BytesIO
+from datetime import date
 import re
 import tempfile
-from datetime import date
+import fcntl
+import json
 from pathlib import Path
-
 from docx import Document
-from docxtpl import DocxTemplate, RichText
-
-from generator.product import Product
 
 _MESES = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ]
 
+def _fmt(n) -> str:
+    """Formatea un número como entero con separador de miles (.)."""
+    return f"{int(n):,}".replace(",", ".")
+
+
 _IF_BLOCK = re.compile(r'\{%-?\s*if\s+\w+\s*-?%\}.*\{%-?\s*endif\s*-?%\}', re.DOTALL)
 _SENTINEL = "\u00abCOND\u00bb"  # «COND» — marca párrafos condicionales
 
 CONFIG_PATH = Path("config/data.json")
-
-
-def _fmt(n) -> str:
-    """Formatea un número como entero con separador de miles (.)."""
-    return f"{int(n):,}".replace(",", ".")
 
 
 def _increment_quote_number() -> str:
@@ -60,13 +56,12 @@ def _prepare_template(template_path: str) -> str:
         if _IF_BLOCK.search(para.text) and para.runs:
             para.runs[0].text = _SENTINEL + para.runs[0].text
     fd, tmp = tempfile.mkstemp(suffix=".docx")
-    import os
-    os.close(fd)
+    import os; os.close(fd)
     doc.save(tmp)
     return tmp
 
 
-def _remove_null_paragraphs(output_path: Path) -> None:
+def _remove_null_paragraphs(output_path: Path):
     """Elimina párrafos donde el sentinel quedó solo (condición False)
     y limpia el sentinel de los párrafos donde la condición fue True."""
     doc = Document(str(output_path))
@@ -86,7 +81,7 @@ def _remove_null_paragraphs(output_path: Path) -> None:
 
 def fill_template(
     data: dict,
-    products: list[Product],
+    products: list,
     template_path: str = "config/template_base.docx",
     output_dir: str = "pruebas",
     fotos: list[dict] | None = None,
@@ -99,9 +94,6 @@ def fill_template(
 
         # Convertir imágenes PIL a InlineImage de docxtpl
         if fotos:
-            from docxtpl import InlineImage
-            from docx.shared import Mm
-            from io import BytesIO
             for foto in fotos:
                 buf = BytesIO()
                 foto["imagen"].save(buf, format="PNG")
@@ -141,7 +133,7 @@ def fill_template(
             ],
             "total_iva":           _fmt(total_iva),
             "valor_total":         _fmt(valor_total),
-            "valor_inicial":       f"{valor_inicial:,}",
+            "valor_inicial":        f"{valor_inicial:,}",
         }
 
         tpl.render(context)

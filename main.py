@@ -27,35 +27,7 @@ load_dotenv(find_dotenv())
 from processor.extractor import extract
 from llm_client import extract_data
 from products.products import build_products, flatten_cotization, parse_price, Product
-
-
-def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> tuple[dict, list[Product]]:
-    content = extract(file_path, ocr=ocr)
-    print(f"[extractor] {content.source}  texto={len(content.text)} chars  imgs={len(content.images)}")
-
-    data = extract_data(
-        text=content.text,
-        file_path=content.source,
-        provider=provider,
-    )
-
-    print("[LLM PROVIDER DATA] Datos extraídos")
-
-    flat_config_path = flatten_cotization()
-    price_flat = extract_data(
-        text=content.text,
-        file_path=content.source,
-        provider=provider,
-        data_path=flat_config_path,
-        prompt_path="config/prompt_cotizacion.md",
-    )
-    Path(flat_config_path).unlink(missing_ok=True)
-
-    price = parse_price(price_flat)
-    products = build_products(price)
-
-    return data, products
-
+from generator.template import fill_template
 
 def build_captions(data: dict, total_images: int) -> list[dict]:
     """Genera pies de foto iniciales desde config/images.json."""
@@ -114,6 +86,38 @@ def build_richtext_fotos(confirmed_fotos: list[dict]) -> list[dict]:
         fotos.append({"imagen": pil_img, "pie": rt})
 
     return fotos
+
+
+def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> tuple[dict, list[Product], list[dict]]:
+    content = extract(file_path, ocr=ocr)
+    print(f"[extractor] {content.source}  texto={len(content.text)} chars  imgs={len(content.images)}")
+
+    data = extract_data(
+        text=content.text,
+        file_path=content.source,
+        provider=provider,
+    )
+
+    print("[LLM PROVIDER DATA] Datos extraídos")
+
+    flat_config_path = flatten_cotization()
+    price_flat = extract_data(
+        text=content.text,
+        file_path=content.source,
+        provider=provider,
+        data_path=flat_config_path,
+        prompt_path="config/prompt_cotizacion.md",
+    )
+    Path(flat_config_path).unlink(missing_ok=True)
+
+    price = parse_price(price_flat)
+    products = build_products(price)
+
+    captions = build_captions(data, len(content.images))
+    fotos = build_richtext_fotos(captions)
+
+
+    return data, products, fotos
 
 
 async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int):
@@ -186,9 +190,12 @@ if __name__ == "__main__":
             run_with_confirm(args.file, args.provider, args.ocr, args.port)
         )
     else:
-        result_data, result_products = run(args.file, provider=args.provider, ocr=args.ocr)
+        result_data, result_products, fotos = run(args.file, provider=args.provider, ocr=args.ocr)
         result_fotos = []
 
     print(json.dumps(result_data, ensure_ascii=False, indent=2))
     for p in result_products:
         print(p)
+
+    output_path = fill_template(result_data, result_products, fotos=result_fotos)
+    print(f"[documento] Generado: {output_path}")
