@@ -15,6 +15,7 @@ import argparse
 import asyncio
 import json
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore", message="Core Pydantic V1 functionality", category=UserWarning)
 
@@ -24,9 +25,10 @@ load_dotenv(find_dotenv())
 
 from processor.extractor import extract
 from llm_client import extract_data
+from products.products import build_products, flatten_cotization, parse_price, Product
 
 
-def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> tuple[dict, dict]:
+def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> tuple[dict, list[Product]]:
     content = extract(file_path, ocr=ocr)
     print(f"[extractor] {content.source}  texto={len(content.text)} chars  imgs={len(content.images)}")
 
@@ -38,16 +40,20 @@ def run(file_path: str, provider: str = "minimax", ocr: bool = False) -> tuple[d
 
     print("[LLM PROVIDER DATA] Datos extraídos")
 
-    price = extract_data(
+    flat_config_path = flatten_cotization()
+    price_flat = extract_data(
         text=content.text,
         file_path=content.source,
         provider=provider,
-        data_path="config/cotization.json",
+        data_path=flat_config_path,
         prompt_path="config/prompt_cotizacion.md",
     )
+    Path(flat_config_path).unlink(missing_ok=True)
 
+    price = parse_price(price_flat)
+    products = build_products(price)
 
-    return data, price
+    return data, products
 
 
 async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int) -> dict:
@@ -65,9 +71,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.confirm:
-        result_data, result_price = asyncio.run(run_with_confirm(args.file, args.provider, args.ocr, args.port))
+        result_data, result_products = asyncio.run(run_with_confirm(args.file, args.provider, args.ocr, args.port))
     else:
-        result_data, result_price = run(args.file, provider=args.provider, ocr=args.ocr)
+        result_data , result_products = run(args.file, provider=args.provider, ocr=args.ocr)
 
     print(json.dumps(result_data, ensure_ascii=False, indent=2))
-    print(json.dumps(result_price, ensure_ascii=False, indent=2))
+    for p in result_products:
+        print(p)
