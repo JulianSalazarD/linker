@@ -1,14 +1,14 @@
 """
-UI de confirmación de datos extraídos.
+UI de confirmación de datos extraídos — wizard de 3 pasos.
 
-Uso:
+Uso (standalone):
     python confirmer/app.py <archivo> [--provider minimax] [--ocr] [--port 8000]
 """
 from __future__ import annotations
 
 import argparse
 import asyncio
-import os
+import json
 import sys
 import threading
 import warnings
@@ -32,7 +32,6 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from processor.extractor import SourceContent, extract
-from llm_client import extract_data
 from confirmer.viewer import docx_to_html, get_viewer_type, images_to_b64
 
 # ---------------------------------------------------------------------------
@@ -41,8 +40,10 @@ from confirmer.viewer import docx_to_html, get_viewer_type, images_to_b64
 
 _content: SourceContent | None = None
 _data: dict = {}
-_result: dict | None = None
-_shutdown_event = threading.Event()  # threading.Event es seguro entre loops/hilos
+_products_dicts: list[dict] = []
+_captions: list[dict] = []
+_result: dict = {}
+_shutdown_event = threading.Event()
 
 # ---------------------------------------------------------------------------
 # App FastAPI
@@ -60,11 +61,16 @@ _jinja_env.filters["basename"] = lambda p: Path(p).name
 @app.get("/")
 async def index():
     assert _content is not None
+    initial = json.dumps({
+        "data": _data,
+        "products": _products_dicts,
+        "captions": _captions,
+    }, ensure_ascii=False)
     html = _jinja_env.get_template("index.html").render(
         viewer_type=get_viewer_type(_content),
         text=_content.text,
         source=_content.source,
-        fields=_data,
+        initial_json=initial,
     )
     return HTMLResponse(html)
 
@@ -88,11 +94,24 @@ async def images():
 _server: uvicorn.Server | None = None
 
 
-@app.post("/confirm")
-async def confirm(request: Request):
-    global _result
+@app.post("/confirm/data")
+async def confirm_data(request: Request):
     body = await request.json()
-    _result = body.get("fields", {})
+    _result["data"] = body.get("fields", {})
+    return JSONResponse({"ok": True})
+
+
+@app.post("/confirm/products")
+async def confirm_products(request: Request):
+    body = await request.json()
+    _result["products"] = body.get("products", [])
+    return JSONResponse({"ok": True})
+
+
+@app.post("/confirm/photos")
+async def confirm_photos(request: Request):
+    body = await request.json()
+    _result["fotos"] = body.get("fotos", [])
     _shutdown_event.set()
     return JSONResponse({"ok": True})
 
@@ -108,16 +127,27 @@ def run_server(port: int):
     _server.run()
 
 
-async def main_async(file_path: str, provider: str, ocr: bool, port: int) -> dict:
-    global _content, _data
+async def main_async(
+    content: SourceContent,
+    data: dict,
+    products: list,
+    captions: list[dict],
+    port: int = 8000,
+) -> dict:
+    global _content, _data, _products_dicts, _captions, _result
 
     _shutdown_event.clear()
-    print(f"Extrayendo: {file_path}")
-    _content = extract(file_path, ocr=ocr)
-    print(f"  texto={len(_content.text)} chars  imgs={len(_content.images)}")
+    _result = {}
 
-    print(f"Infiriendo campos con {provider}…")
-    _data = extract_data(text=_content.text, file_path=_content.source, provider=provider)
+    _content = content
+    _data = data
+    _captions = captions
+
+    # Serializar products a dicts para el frontend
+    _products_dicts = [
+        {"item": p.item, "qty": p.qty, "desc": p.desc, "unit": p.unit, "vr_uni_inc": p.vr_uni_inc}
+        for p in products
+    ]
 
     t = threading.Thread(target=run_server, args=(port,), daemon=True)
     t.start()
@@ -126,18 +156,24 @@ async def main_async(file_path: str, provider: str, ocr: bool, port: int) -> dic
     print(f"Abriendo {url}")
     webbrowser.open(url)
 
-    # Esperar en executor para no bloquear el loop con threading.Event.wait()
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, _shutdown_event.wait)
 
-    # Detener uvicorn limpiamente
     if _server is not None:
         _server.should_exit = True
 
-    return _result or _data
+    # Asegurar que el resultado tenga todas las claves
+    _result.setdefault("data", _data)
+    _result.setdefault("products", _products_dicts)
+    _result.setdefault("fotos", _captions)
+
+    return _result
 
 
 if __name__ == "__main__":
+    from llm_client import extract_data
+    from products.products import build_products, flatten_cotization, parse_price
+
     parser = argparse.ArgumentParser(description="UI de confirmación de datos extraídos.")
     parser.add_argument("file", help="Ruta al archivo (.docx, .pdf, …)")
     parser.add_argument("--provider", default="minimax", choices=["gemini", "glm", "minimax"])
@@ -145,7 +181,21 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
 
-    import json
-    result = asyncio.run(main_async(args.file, args.provider, args.ocr, args.port))
+    content = extract(args.file, ocr=args.ocr)
+    data = extract_data(text=content.text, file_path=content.source, provider=args.provider)
+
+    flat_config_path = flatten_cotization()
+    price_flat = extract_data(
+        text=content.text, file_path=content.source,
+        provider=args.provider, data_path=flat_config_path,
+        prompt_path="config/prompt_cotizacion.md",
+    )
+    Path(flat_config_path).unlink(missing_ok=True)
+    products = build_products(parse_price(price_flat))
+
+    from main import build_captions
+    captions = build_captions(data, len(content.images))
+
+    result = asyncio.run(main_async(content, data, products, captions, args.port))
     print("\nDatos confirmados:")
     print(json.dumps(result, ensure_ascii=False, indent=2))

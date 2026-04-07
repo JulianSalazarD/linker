@@ -20,27 +20,87 @@
 
     {% if viewer_type in ("pdf", "docx") %}
       <iframe src="/document"></iframe>
-
     {% else %}
       <div id="doc-text">{{ text }}</div>
     {% endif %}
   </div>
 
-  <!-- ── Panel derecho: formulario ───────────────────── -->
+  <!-- ── Panel derecho: wizard ───────────────────────── -->
   <div class="panel-form">
-    <h2>Datos extraídos</h2>
-    <div id="fields"></div>
-    <div class="form-actions">
-      <button id="btn-add" class="btn btn-add">+ Agregar campo</button>
-      <button id="btn-confirm" class="btn btn-confirm">Confirmar</button>
+
+    <!-- Indicador de pasos -->
+    <div class="wizard-steps">
+      <div class="wizard-step active" data-step="1">
+        <span class="step-num">1</span>
+        <span class="step-label">Datos</span>
+      </div>
+      <div class="wizard-step" data-step="2">
+        <span class="step-num">2</span>
+        <span class="step-label">Productos</span>
+      </div>
+      <div class="wizard-step" data-step="3">
+        <span class="step-num">3</span>
+        <span class="step-label">Fotos</span>
+      </div>
     </div>
+
+    <!-- Step 1: Datos -->
+    <div id="step-data" class="step-content">
+      <h2>Datos extraídos</h2>
+      <div id="fields"></div>
+      <div class="form-actions">
+        <button id="btn-add-field" class="btn btn-add">+ Agregar campo</button>
+        <button id="btn-next-1" class="btn btn-next">Siguiente</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Productos -->
+    <div id="step-products" class="step-content hidden">
+      <h2>Productos</h2>
+      <div class="table-wrapper">
+        <table id="products-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Cant.</th>
+              <th>Descripción</th>
+              <th>Unidad</th>
+              <th>Vr. Unitario</th>
+              <th>IVA (19%)</th>
+              <th>Vr. Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="products-body"></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="btn-add-product" class="btn btn-add">+ Agregar producto</button>
+        <div class="actions-right">
+          <button id="btn-back-2" class="btn btn-back">Atrás</button>
+          <button id="btn-next-2" class="btn btn-next">Siguiente</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Fotos -->
+    <div id="step-photos" class="step-content hidden">
+      <h2>Fotos y pies de foto</h2>
+      <p class="hint">Usa [corchetes] para marcar texto en rojo en el documento final.</p>
+      <div id="photo-list"></div>
+      <div class="form-actions">
+        <button id="btn-back-3" class="btn btn-back">Atrás</button>
+        <button id="btn-confirm" class="btn btn-confirm">Confirmar todo</button>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
 <!-- Datos iniciales para app.js -->
 <script id="initial-data" type="application/json">
-{{ fields | tojson }}
+{{ initial_json | safe }}
 </script>
 <script src="/static/app.js"></script>
 </body>

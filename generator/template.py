@@ -97,6 +97,17 @@ def fill_template(
     try:
         tpl = DocxTemplate(tmp_template)
 
+        # Convertir imágenes PIL a InlineImage de docxtpl
+        if fotos:
+            from docxtpl import InlineImage
+            from docx.shared import Mm
+            from io import BytesIO
+            for foto in fotos:
+                buf = BytesIO()
+                foto["imagen"].save(buf, format="PNG")
+                buf.seek(0)
+                foto["imagen"] = InlineImage(tpl, image_descriptor=buf, width=Mm(150))
+
         hoy = date.today()
         fecha = f"{hoy.day} de {_MESES[hoy.month - 1]} de {hoy.year}"
 
