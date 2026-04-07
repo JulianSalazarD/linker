@@ -80,17 +80,23 @@ def build_captions(data: dict, total_images: int) -> list[dict]:
     return captions
 
 
-def build_richtext_fotos(images: list, confirmed_captions: list[dict]) -> list[dict]:
-    """Convierte captions de texto plano a RichText con colores."""
+def build_richtext_fotos(confirmed_fotos: list[dict]) -> list[dict]:
+    """Convierte fotos confirmadas (con base64 y caption) a RichText + PIL."""
+    import base64
+    from io import BytesIO
+    from PIL import Image
     from docxtpl import RichText
 
     fotos = []
-    for cap in confirmed_captions:
-        idx = cap["index"]
+    for cap in confirmed_fotos:
         text = cap["caption"]
+        image_b64 = cap["image_b64"]
+
+        # Decodificar imagen base64 a PIL
+        img_data = base64.b64decode(image_b64)
+        pil_img = Image.open(BytesIO(img_data)).copy()
 
         rt = RichText()
-        # Separar prefijo "Ilustración N. " del resto
         match = re.match(r"(Ilustración \d+\.\s*)(.*)", text, re.IGNORECASE)
         if match:
             prefix, body = match.group(1), match.group(2)
@@ -105,7 +111,7 @@ def build_richtext_fotos(images: list, confirmed_captions: list[dict]) -> list[d
             else:
                 rt.add(part, color="1F497D")
 
-        fotos.append({"imagen": images[idx], "pie": rt})
+        fotos.append({"imagen": pil_img, "pie": rt})
 
     return fotos
 
@@ -150,18 +156,18 @@ async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int):
     confirmed_products_raw = result["products"]
     confirmed_fotos_raw = result["fotos"]
 
-    GenProduct.reset_counter()
+    Product._counter = 0
     confirmed_products = []
     for p in confirmed_products_raw:
-        confirmed_products.append(GenProduct(
+        confirmed_products.append(Product(
             qty=int(p["qty"]),
             desc=p["desc"],
             unit=p["unit"],
             vr_uni_inc=int(p["vr_uni_inc"]),
         ))
 
-    # 7. Convertir captions a RichText
-    fotos = build_richtext_fotos(content.images, confirmed_fotos_raw)
+    # 7. Convertir captions + imágenes base64 a RichText + PIL
+    fotos = build_richtext_fotos(confirmed_fotos_raw)
 
     return confirmed_data, confirmed_products, fotos
 

@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   const initial = JSON.parse(document.getElementById("initial-data").textContent);
   let currentStep = 1;
-  let imagesCache = null;
+  let imagesCache = null;       // thumbnails para mostrar
+  let imagesFullCache = null;    // full-size para el docx
 
   // ── Utilidades ──────────────────────────────────────
   function escHtml(s) {
@@ -50,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return row;
   }
 
-  // Poblar datos iniciales
   Object.entries(initial.data).forEach(([k, v]) => addRow(k, v ?? ""));
 
   document.getElementById("btn-add-field").addEventListener("click", () => {
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tr.innerHTML = `
       <td class="item-cell">${item}</td>
       <td><input type="number" class="qty" value="${product.qty ?? 1}" min="1"></td>
-      <td><input type="text" class="desc" value="${escHtml(product.desc ?? "")}"></td>
+      <td><textarea class="desc" rows="2">${escHtml(product.desc ?? "")}</textarea></td>
       <td><input type="text" class="unit" value="${escHtml(product.unit ?? "und")}"></td>
       <td><input type="number" class="vr-uni" value="${product.vr_uni_inc ?? 0}" min="0"></td>
       <td class="iva-cell computed">0</td>
@@ -132,7 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Poblar productos iniciales
   initial.products.forEach(p => addProductRow(p));
 
   document.getElementById("btn-add-product").addEventListener("click", () => {
@@ -167,11 +166,16 @@ document.addEventListener("DOMContentLoaded", () => {
       body: JSON.stringify({ products }),
     });
 
-    // Cargar imágenes si no están en cache
+    // Cargar imágenes si no están en cache (thumb + full en paralelo)
     if (!imagesCache) {
-      const res = await fetch("/images");
-      const data = await res.json();
-      imagesCache = data.images;
+      const [thumbRes, fullRes] = await Promise.all([
+        fetch("/images"),
+        fetch("/images/full"),
+      ]);
+      const thumbData = await thumbRes.json();
+      const fullData = await fullRes.json();
+      imagesCache = thumbData.images;
+      imagesFullCache = fullData.images;
     }
     populatePhotos();
 
@@ -184,33 +188,96 @@ document.addEventListener("DOMContentLoaded", () => {
   // STEP 3: Fotos
   // ══════════════════════════════════════════════════════
   const photoList = document.getElementById("photo-list");
+  let photosPopulated = false;
+
+  function createPhotoItem(b64, fullB64, caption, index) {
+    const div = document.createElement("div");
+    div.className = "photo-item";
+    div.dataset.index = index;
+    div.dataset.fullB64 = fullB64;
+    div.innerHTML = `
+      <img src="data:image/png;base64,${b64}" alt="Foto ${index + 1}">
+      <div class="photo-edit">
+        <label>Foto ${index + 1}</label>
+        <textarea class="caption" rows="3">${escHtml(caption)}</textarea>
+      </div>
+      <div class="photo-actions">
+        <button class="btn-move-up" title="Mover arriba">▲</button>
+        <button class="btn-move-down" title="Mover abajo">▼</button>
+        <button class="del" title="Eliminar">✕</button>
+      </div>
+    `;
+
+    div.querySelector(".btn-move-up").addEventListener("click", () => {
+      const prev = div.previousElementSibling;
+      if (prev) {
+        photoList.insertBefore(div, prev);
+        renumberPhotos();
+      }
+    });
+
+    div.querySelector(".btn-move-down").addEventListener("click", () => {
+      const next = div.nextElementSibling;
+      if (next) {
+        photoList.insertBefore(next, div);
+        renumberPhotos();
+      }
+    });
+
+    div.querySelector(".del").addEventListener("click", () => {
+      div.remove();
+      renumberPhotos();
+    });
+
+    return div;
+  }
+
+  function renumberPhotos() {
+    photoList.querySelectorAll(".photo-item").forEach((div, i) => {
+      div.dataset.index = i;
+      div.querySelector("label").textContent = `Foto ${i + 1}`;
+    });
+  }
 
   function populatePhotos() {
-    if (photoList.children.length > 0) return; // ya poblado
+    if (photosPopulated) return;
+    photosPopulated = true;
 
     const imgs = imagesCache || [];
     const captions = initial.captions || [];
 
-    // Crear tarjetas de fotos
+    const fullImgs = imagesFullCache || [];
     imgs.forEach((b64, i) => {
       const cap = captions[i] || { index: i, caption: "" };
-      const div = document.createElement("div");
-      div.className = "photo-item";
-      div.innerHTML = `
-        <img src="data:image/png;base64,${b64}" alt="Foto ${i + 1}">
-        <div class="photo-edit">
-          <label>Foto ${i + 1}</label>
-          <textarea class="caption" data-index="${cap.index}" rows="3">${escHtml(cap.caption)}</textarea>
-        </div>
-      `;
-      photoList.appendChild(div);
+      const full = fullImgs[i] || b64;
+      photoList.appendChild(createPhotoItem(b64, full, cap.caption, i));
     });
 
-    // Si no hay imágenes, mostrar mensaje
     if (imgs.length === 0) {
       photoList.innerHTML = '<p class="hint">No se encontraron imágenes en el documento.</p>';
     }
   }
+
+  // Insertar imagen desde archivo local
+  document.getElementById("btn-add-photo").addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.addEventListener("change", () => {
+      Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const fullB64 = e.target.result.split(",")[1];
+          const idx = photoList.querySelectorAll(".photo-item").length;
+          photoList.appendChild(createPhotoItem(fullB64, fullB64, "", idx));
+          renumberPhotos();
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+    input.click();
+  });
 
   document.getElementById("btn-back-3").addEventListener("click", () => showStep(2));
 
@@ -220,10 +287,11 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.textContent = "Guardando…";
 
     const fotos = [];
-    photoList.querySelectorAll(".caption").forEach(ta => {
+    photoList.querySelectorAll(".photo-item").forEach((div, i) => {
       fotos.push({
-        index: parseInt(ta.dataset.index),
-        caption: ta.value.trim(),
+        index: i,
+        caption: div.querySelector(".caption").value.trim(),
+        image_b64: div.dataset.fullB64,
       });
     });
 

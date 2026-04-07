@@ -88,7 +88,13 @@ async def document():
 @app.get("/images")
 async def images():
     assert _content is not None
-    return JSONResponse({"images": images_to_b64(_content)})
+    return JSONResponse({"images": images_to_b64(_content, thumbnail=True)})
+
+
+@app.get("/images/full")
+async def images_full():
+    assert _content is not None
+    return JSONResponse({"images": images_to_b64(_content, thumbnail=False)})
 
 
 _server: uvicorn.Server | None = None

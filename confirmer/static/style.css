@@ -248,9 +248,24 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
 .product-row input:focus { border-color: #6366f1; background: #fff; }
 
 .product-row input[type="number"] { width: 90px; }
-.product-row .desc { min-width: 120px; }
 .product-row .unit { width: 60px; }
 .product-row .qty { width: 50px; }
+
+.product-row textarea.desc {
+  width: 100%;
+  min-width: 140px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
+  outline: none;
+  background: transparent;
+  resize: vertical;
+  transition: border-color .15s;
+}
+.product-row textarea.desc:hover { border-color: #d1d5db; }
+.product-row textarea.desc:focus { border-color: #6366f1; background: #fff; }
 
 .item-cell {
   text-align: center;
@@ -295,6 +310,27 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
   border: 1px solid #d1d5db;
   flex-shrink: 0;
 }
+
+.photo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.photo-actions button {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  color: #475569;
+}
+.photo-actions button:hover { background: #e2e8f0; }
+.photo-actions button.del { border-color: #fca5a5; color: #ef4444; }
+.photo-actions button.del:hover { background: #fee2e2; }
 
 .photo-edit {
   flex: 1;

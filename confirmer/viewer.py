@@ -35,13 +35,14 @@ def docx_to_html(source: str) -> str:
 <body>{result.value}</body></html>"""
 
 
-def images_to_b64(content: SourceContent) -> list[str]:
+def images_to_b64(content: SourceContent, thumbnail: bool = True) -> list[str]:
     """Convierte las imágenes PIL a strings base64 PNG."""
     result = []
     for img in content.images:
         buf = io.BytesIO()
-        thumb = img.copy()
-        thumb.thumbnail((300, 300))
-        thumb.save(buf, format="PNG")
+        out = img.copy()
+        if thumbnail:
+            out.thumbnail((300, 300))
+        out.save(buf, format="PNG")
         result.append(base64.b64encode(buf.getvalue()).decode())
     return result
