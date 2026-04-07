@@ -1,44 +1,65 @@
 {
-  "fields": [
+  "productos": [
     {
-      "name": "costo_total",
-      "type": "number",
-      "nullable": true,
-      "description": "Costo total de la cotización en pesos colombianos"
+      "id": "cotizacion",
+      "descripcion": "Instalación principal de estación de carga",
+      "requerido": true,
+      "fields": [
+        {
+          "name": "costo_total",
+          "type": "number",
+          "nullable": false,
+          "description": "Costo total de la instalación en pesos colombianos, sin IVA"
+        },
+        {
+          "name": "metros",
+          "type": "number",
+          "nullable": false,
+          "description": "Metros totales de cableado o tubería"
+        }
+      ]
     },
     {
-      "name": "metros",
-      "type": "number",
-      "nullable": true,
-      "description": "Metros totales de cableado"
+      "id": "tiene_nema_14_50",
+      "descripcion": "Adaptador Tesla NEMA 14-50",
+      "requerido": false,
+      "fields": [
+        {
+          "name": "incluido",
+          "type": "boolean",
+          "nullable": false,
+          "default": false,
+          "description": "true si el adaptador NEMA 14-50 está incluido en la cotización"
+        },
+        {
+          "name": "costo",
+          "type": "number",
+          "nullable": true,
+          "default": 250000,
+          "description": "Costo del adaptador NEMA 14-50 en pesos colombianos"
+        }
+      ]
     },
     {
-      "name": "tiene_wallbox",
-      "type": "boolean",
-      "nullable": true,
-      "default": false,
-      "description": "true si incluye wallbox"
-    },
-    {
-      "name": "costo_wallbox",
-      "type": "number",
-      "nullable": true,
-      "default": 250000,
-      "description": "Costo del wallbox en pesos colombianos"
-    },
-    {
-      "name": "tiene_nema_14_50",
-      "type": "boolean",
-      "nullable": true,
-      "default": false,
-      "description": "true si incluye adaptador NEMA 14-50"
-    },
-    {
-      "name": "costo_nema_14_50",
-      "type": "number",
-      "nullable": true,
-      "default": 250000,
-      "description": "Costo del adaptador NEMA 14-50 en pesos colombianos"
+      "id": "tiene_wallbox",
+      "descripcion": "Wallbox",
+      "requerido": false,
+      "fields": [
+        {
+          "name": "incluido",
+          "type": "boolean",
+          "nullable": false,
+          "default": false,
+          "description": "true si el wallbox está incluido en la cotización"
+        },
+        {
+          "name": "costo",
+          "type": "number",
+          "nullable": true,
+          "default": 250000,
+          "description": "Costo del wallbox en pesos colombianos"
+        }
+      ]
     }
   ],
   "models": {

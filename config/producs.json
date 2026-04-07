@@ -1,0 +1,23 @@
+[
+  {
+    "id": "cotizacion",
+    "cantidad": null,
+    "descripción": "Instalación de estación de carga incluido cable de cobre, tubería EMT, Protección Termo Magnética, Protección diferencial Caja Mini incluye tesla nema 14-50",
+    "un. medida": "metros",
+    "valor unitario": null
+  },
+  {
+    "id": "tiene_nema_14_50",
+    "cantidad": 1,
+    "descripción": "Adaptador Tesla nema 14 50",
+    "un. medida": "und",
+    "valor unitario": 250000
+  },
+  {
+    "id": "tiene_wallbox",
+    "cantidad": 1,
+    "descripción": "wallbox",
+    "un. medida": "und",
+    "valor unitario": 250000
+  }
+]

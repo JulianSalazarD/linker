@@ -4,3 +4,4 @@ pruebas/
 uv.lock
 */__pycache__/
 config/*.docx
+config/data.lock
