@@ -358,32 +358,62 @@ document.addEventListener("DOMContentLoaded", () => {
     strokes.forEach(s => drawStroke(s));
   }
 
-  function drawStroke(s) {
-    ctx.strokeStyle = s.color;
-    ctx.lineWidth = s.width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+  function drawArrowhead(c, from, to, size) {
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    c.beginPath();
+    c.moveTo(to.x, to.y);
+    c.lineTo(to.x - size * Math.cos(angle - Math.PI / 6), to.y - size * Math.sin(angle - Math.PI / 6));
+    c.lineTo(to.x - size * Math.cos(angle + Math.PI / 6), to.y - size * Math.sin(angle + Math.PI / 6));
+    c.closePath();
+    c.fillStyle = c.strokeStyle;
+    c.fill();
+  }
+
+  function drawStrokeOn(c, s) {
+    c.strokeStyle = s.color;
+    c.lineWidth = s.width;
+    c.lineCap = "round";
+    c.lineJoin = "round";
+    c.setLineDash([]);
 
     if (s.tool === "free") {
       if (s.points.length < 2) return;
-      ctx.beginPath();
-      ctx.moveTo(s.points[0].x, s.points[0].y);
+      c.beginPath();
+      c.moveTo(s.points[0].x, s.points[0].y);
       for (let i = 1; i < s.points.length; i++) {
-        ctx.lineTo(s.points[i].x, s.points[i].y);
+        c.lineTo(s.points[i].x, s.points[i].y);
       }
-      ctx.stroke();
+      c.stroke();
     } else if (s.tool === "rect") {
       const x = Math.min(s.start.x, s.end.x);
       const y = Math.min(s.start.y, s.end.y);
       const w = Math.abs(s.end.x - s.start.x);
       const h = Math.abs(s.end.y - s.start.y);
-      ctx.strokeRect(x, y, w, h);
+      c.strokeRect(x, y, w, h);
     } else if (s.tool === "line") {
-      ctx.beginPath();
-      ctx.moveTo(s.start.x, s.start.y);
-      ctx.lineTo(s.end.x, s.end.y);
-      ctx.stroke();
+      c.beginPath();
+      c.moveTo(s.start.x, s.start.y);
+      c.lineTo(s.end.x, s.end.y);
+      c.stroke();
+    } else if (s.tool === "arrow") {
+      c.beginPath();
+      c.moveTo(s.start.x, s.start.y);
+      c.lineTo(s.end.x, s.end.y);
+      c.stroke();
+      drawArrowhead(c, s.start, s.end, s.width * 4);
+    } else if (s.tool === "dashedArrow") {
+      c.setLineDash([s.width * 3, s.width * 2]);
+      c.beginPath();
+      c.moveTo(s.start.x, s.start.y);
+      c.lineTo(s.end.x, s.end.y);
+      c.stroke();
+      c.setLineDash([]);
+      drawArrowhead(c, s.start, s.end, s.width * 4);
     }
+  }
+
+  function drawStroke(s) {
+    drawStrokeOn(ctx, s);
   }
 
   function undoStroke() {
@@ -429,11 +459,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.moveTo(prev.x, prev.y);
       ctx.lineTo(pt.x, pt.y);
       ctx.stroke();
-    } else {
-      // Preview para rect/line: redibujar todo + preview
+    } else if (currentTool === "rect" || currentTool === "line" || currentTool === "arrow" || currentTool === "dashedArrow") {
+      // Preview para rect/line/arrow: redibujar todo + preview
       renderCanvas();
-      const preview = { tool: currentTool, color: currentColor, width: currentWidth, start: drawStart, end: pt };
-      drawStroke(preview);
+      drawStroke({ tool: currentTool, color: currentColor, width: currentWidth, start: drawStart, end: pt });
     }
   });
 
@@ -490,27 +519,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let overlayZCounter = 10;
+
   function addOverlayToCanvas(ov) {
     const img = new Image();
     img.src = `data:${ov.mime};base64,${ov.data}`;
     img.onload = () => {
-      // Tamaño inicial: 100px de ancho, proporcional
-      const w = 100;
-      const h = (img.height / img.width) * w;
-      // Posición inicial: centro del canvas visible
+      const aspectRatio = img.height / img.width;
+      const w = 120;
+      const h = w * aspectRatio;
       const rect = canvas.getBoundingClientRect();
       const x = rect.width / 2 - w / 2;
       const y = rect.height / 2 - h / 2;
 
+      overlayZCounter++;
       const el = document.createElement("div");
       el.className = "overlay-placed";
       el.style.left = x + "px";
       el.style.top = y + "px";
       el.style.width = w + "px";
       el.style.height = h + "px";
-      el.innerHTML = `<img src="${img.src}"><button class="overlay-del">✕</button>`;
+      el.style.zIndex = overlayZCounter;
+      el.innerHTML = `
+        <img src="${img.src}">
+        <button class="overlay-del">✕</button>
+        <div class="overlay-resize"></div>
+      `;
 
-      const entry = { imgEl: img, el, x, y, w, h };
+      const entry = { imgEl: img, el, x, y, w, h, aspectRatio };
       placedOverlays.push(entry);
 
       el.querySelector(".overlay-del").addEventListener("click", (e) => {
@@ -519,22 +555,26 @@ document.addEventListener("DOMContentLoaded", () => {
         placedOverlays = placedOverlays.filter(o => o.el !== el);
       });
 
-      // Drag
+      // Traer al frente al hacer clic
+      el.addEventListener("mousedown", () => {
+        overlayZCounter++;
+        el.style.zIndex = overlayZCounter;
+      });
+
       makeDraggable(el, entry);
+      makeResizable(el, entry);
 
       canvasWrap.appendChild(el);
     };
   }
 
   function makeDraggable(el, entry) {
-    let dragX, dragY;
-
     el.addEventListener("mousedown", (e) => {
-      if (e.target.classList.contains("overlay-del")) return;
+      if (e.target.classList.contains("overlay-del") || e.target.classList.contains("overlay-resize")) return;
       e.preventDefault();
       e.stopPropagation();
-      dragX = e.clientX - el.offsetLeft;
-      dragY = e.clientY - el.offsetTop;
+      const dragX = e.clientX - el.offsetLeft;
+      const dragY = e.clientY - el.offsetTop;
 
       function onMove(ev) {
         const newX = ev.clientX - dragX;
@@ -543,6 +583,32 @@ document.addEventListener("DOMContentLoaded", () => {
         el.style.top = newY + "px";
         entry.x = newX;
         entry.y = newY;
+      }
+      function onUp() {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+  }
+
+  function makeResizable(el, entry) {
+    const handle = el.querySelector(".overlay-resize");
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startW = entry.w;
+
+      function onMove(ev) {
+        const delta = ev.clientX - startX;
+        const newW = Math.max(30, startW + delta);
+        const newH = newW * entry.aspectRatio;
+        el.style.width = newW + "px";
+        el.style.height = newH + "px";
+        entry.w = newW;
+        entry.h = newH;
       }
       function onUp() {
         document.removeEventListener("mousemove", onMove);
@@ -563,33 +629,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Dibujar imagen base + strokes
     tmpCtx.drawImage(baseImage, 0, 0);
-    strokes.forEach(s => {
-      tmpCtx.strokeStyle = s.color;
-      tmpCtx.lineWidth = s.width;
-      tmpCtx.lineCap = "round";
-      tmpCtx.lineJoin = "round";
-
-      if (s.tool === "free") {
-        if (s.points.length < 2) return;
-        tmpCtx.beginPath();
-        tmpCtx.moveTo(s.points[0].x, s.points[0].y);
-        for (let i = 1; i < s.points.length; i++) {
-          tmpCtx.lineTo(s.points[i].x, s.points[i].y);
-        }
-        tmpCtx.stroke();
-      } else if (s.tool === "rect") {
-        const x = Math.min(s.start.x, s.end.x);
-        const y = Math.min(s.start.y, s.end.y);
-        const w = Math.abs(s.end.x - s.start.x);
-        const h = Math.abs(s.end.y - s.start.y);
-        tmpCtx.strokeRect(x, y, w, h);
-      } else if (s.tool === "line") {
-        tmpCtx.beginPath();
-        tmpCtx.moveTo(s.start.x, s.start.y);
-        tmpCtx.lineTo(s.end.x, s.end.y);
-        tmpCtx.stroke();
-      }
-    });
+    strokes.forEach(s => drawStrokeOn(tmpCtx, s));
 
     // Dibujar overlays: convertir posición CSS → coordenadas del canvas
     const canvasRect = canvas.getBoundingClientRect();
