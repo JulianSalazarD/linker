@@ -309,7 +309,9 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
   border-radius: 6px;
   border: 1px solid #d1d5db;
   flex-shrink: 0;
+  cursor: pointer;
 }
+.photo-item img:hover { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.3); }
 
 .photo-actions {
   display: flex;
@@ -397,3 +399,187 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
 .btn-confirm:hover { background: #16a34a; }
 
 .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════
+   Editor modal
+   ══════════════════════════════════════════════════════ */
+
+.editor-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,.85);
+  display: flex;
+  flex-direction: column;
+}
+.editor-modal.hidden { display: none; }
+
+/* Toolbar */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: #1e293b;
+  color: #f8fafc;
+  flex-shrink: 0;
+}
+
+.tool-group, .color-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.editor-toolbar .tool-btn {
+  background: #334155;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+.editor-toolbar .tool-btn:hover { background: #475569; }
+.editor-toolbar .tool-btn.active { background: #4338ca; border-color: #6366f1; color: #fff; }
+
+.editor-toolbar .btn-save {
+  background: #22c55e;
+  border-color: #16a34a;
+  color: #fff;
+}
+.editor-toolbar .btn-save:hover { background: #16a34a; }
+
+.color-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color .15s;
+}
+.color-dot:hover { border-color: rgba(255,255,255,.5); }
+.color-dot.active { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.4); }
+
+.width-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.width-label input[type="range"] { width: 80px; }
+
+.toolbar-spacer { flex: 1; }
+
+/* Body */
+.editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+
+.editor-canvas-wrap canvas {
+  cursor: crosshair;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Overlay items sobre el canvas */
+.overlay-placed {
+  position: absolute;
+  cursor: move;
+  border: 2px dashed transparent;
+  transition: border-color .15s;
+}
+.overlay-placed:hover { border-color: rgba(255,255,255,.6); }
+.overlay-placed img {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.overlay-placed .overlay-del {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.overlay-placed:hover .overlay-del { display: flex; }
+
+/* Sidebar de stickers */
+.editor-overlays {
+  width: 180px;
+  background: #fff;
+  border-left: 1px solid #334155;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.editor-overlays h3 {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#overlay-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+}
+
+#overlay-grid .overlay-thumb {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px;
+  background: #f9fafb;
+  transition: border-color .15s;
+}
+#overlay-grid .overlay-thumb:hover { border-color: #6366f1; }
+
+#overlay-grid .overlay-name {
+  width: 70px;
+  font-size: 10px;
+  text-align: center;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overlay-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}

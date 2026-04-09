@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 import json
 import sys
 import threading
@@ -95,6 +96,19 @@ async def images():
 async def images_full():
     assert _content is not None
     return JSONResponse({"images": images_to_b64(_content, thumbnail=False)})
+
+
+@app.get("/overlays")
+async def overlays():
+    overlays_dir = Path(_root) / "config" / "overlays"
+    result = []
+    if overlays_dir.exists():
+        for f in sorted(overlays_dir.iterdir()):
+            if f.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+                data = base64.b64encode(f.read_bytes()).decode()
+                mime = "image/png" if f.suffix.lower() == ".png" else "image/jpeg"
+                result.append({"name": f.stem, "data": data, "mime": mime})
+    return JSONResponse({"overlays": result})
 
 
 _server: uvicorn.Server | None = None

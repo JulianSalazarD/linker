@@ -101,6 +101,40 @@
 
 </div>
 
+<!-- Editor de imágenes -->
+<div id="editor-modal" class="editor-modal hidden">
+  <div class="editor-toolbar">
+    <div class="tool-group">
+      <button class="tool-btn active" data-tool="free">Libre</button>
+      <button class="tool-btn" data-tool="rect">Rectángulo</button>
+      <button class="tool-btn" data-tool="line">Línea</button>
+    </div>
+    <div class="color-group">
+      <span class="color-dot active" data-color="#ef4444" style="background:#ef4444"></span>
+      <span class="color-dot" data-color="#3b82f6" style="background:#3b82f6"></span>
+      <span class="color-dot" data-color="#22c55e" style="background:#22c55e"></span>
+      <span class="color-dot" data-color="#eab308" style="background:#eab308"></span>
+      <span class="color-dot" data-color="#000000" style="background:#000000"></span>
+    </div>
+    <label class="width-label">Grosor
+      <input type="range" id="stroke-width" min="2" max="10" value="3">
+    </label>
+    <div class="toolbar-spacer"></div>
+    <button id="btn-undo" class="tool-btn">Deshacer</button>
+    <button id="btn-editor-cancel" class="tool-btn">Cancelar</button>
+    <button id="btn-editor-save" class="tool-btn btn-save">Guardar</button>
+  </div>
+  <div class="editor-body">
+    <div class="editor-canvas-wrap" id="editor-canvas-wrap">
+      <canvas id="editor-canvas"></canvas>
+    </div>
+    <div class="editor-overlays">
+      <h3>Stickers</h3>
+      <div id="overlay-grid"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Datos iniciales para app.js -->
 <script id="initial-data" type="application/json">
 {{ initial_json | safe }}
