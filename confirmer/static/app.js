@@ -343,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const exportB64 = exportCanvas();
       editorPhotoDiv.dataset.fullB64 = exportB64;
       // Actualizar thumbnail visible
-      editorPhotoDiv.querySelector("img").src = "data:image/png;base64," + exportB64;
+      editorPhotoDiv.querySelector("img").src = "data:image/jpeg;base64," + exportB64;
     }
     // Limpiar overlays del DOM
     canvasWrap.querySelectorAll(".overlay-placed").forEach(el => el.remove());
@@ -528,9 +528,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const aspectRatio = img.height / img.width;
       const w = 120;
       const h = w * aspectRatio;
-      const rect = canvas.getBoundingClientRect();
-      const x = rect.width / 2 - w / 2;
-      const y = rect.height / 2 - h / 2;
+      const canvasRect = canvas.getBoundingClientRect();
+      const wrapRect = canvasWrap.getBoundingClientRect();
+      const cOffX = canvasRect.left - wrapRect.left;
+      const cOffY = canvasRect.top - wrapRect.top;
+      const x = cOffX + canvasRect.width / 2 - w / 2;
+      const y = cOffY + canvasRect.height / 2 - h / 2;
 
       overlayZCounter++;
       const el = document.createElement("div");
@@ -632,19 +635,24 @@ document.addEventListener("DOMContentLoaded", () => {
     strokes.forEach(s => drawStrokeOn(tmpCtx, s));
 
     // Dibujar overlays: convertir posición CSS → coordenadas del canvas
+    // El canvas está centrado con flexbox dentro de canvasWrap,
+    // hay que restar el offset para que las coordenadas sean relativas al canvas.
     const canvasRect = canvas.getBoundingClientRect();
+    const wrapRect = canvasWrap.getBoundingClientRect();
+    const offsetX = canvasRect.left - wrapRect.left;
+    const offsetY = canvasRect.top - wrapRect.top;
     const scaleX = baseImage.width / canvasRect.width;
     const scaleY = baseImage.height / canvasRect.height;
 
     placedOverlays.forEach(ov => {
-      const dx = ov.x * scaleX;
-      const dy = ov.y * scaleY;
+      const dx = (ov.x - offsetX) * scaleX;
+      const dy = (ov.y - offsetY) * scaleY;
       const dw = ov.w * scaleX;
       const dh = ov.h * scaleY;
       tmpCtx.drawImage(ov.imgEl, dx, dy, dw, dh);
     });
 
-    return tmpCanvas.toDataURL("image/png").split(",")[1];
+    return tmpCanvas.toDataURL("image/jpeg", 0.95).split(",")[1];
   }
 
   // Iniciar en paso 1
