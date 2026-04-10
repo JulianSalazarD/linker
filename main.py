@@ -5,18 +5,19 @@ Uso:
     python main.py <archivo> [--provider gemini|glm|minimax] [--ocr] [--confirm] [--port 8000]
 
 Ejemplos:
-    python main.py "pruebas/carera 26 No 50 - 47_260318_200729.docx"
-    python main.py "pruebas/Bogotá Cra 62#64-10_260327_191939.pdf" --ocr --confirm
-    python main.py "pruebas/Calle 182 # 45 45_260318_201415.docx" --provider gemini --confirm
+    python main.py "archivo.docx"
+    python main.py "archivo.pdf" --ocr --confirm
+    python main.py "archivo.docx" --provider gemini --confirm
 """
 from __future__ import annotations
 
-import argparse
 import asyncio
 import json
 import re
 import warnings
 from pathlib import Path
+
+import typer
 
 warnings.filterwarnings("ignore", message="Core Pydantic V1 functionality", category=UserWarning)
 
@@ -177,25 +178,33 @@ async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Extrae y estructura datos de un documento.")
-    parser.add_argument("file", help="Ruta al archivo (.docx, .pdf, …)")
-    parser.add_argument("--provider", default="minimax", choices=["gemini", "glm", "minimax"])
-    parser.add_argument("--ocr", action="store_true")
-    parser.add_argument("--confirm", action="store_true", help="Abrir UI de confirmación en el navegador")
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
+    cli = typer.Typer(rich_markup_mode="rich")
 
-    if args.confirm:
-        result_data, result_products, result_fotos = asyncio.run(
-            run_with_confirm(args.file, args.provider, args.ocr, args.port)
-        )
-    else:
-        result_data, result_products, fotos = run(args.file, provider=args.provider, ocr=args.ocr)
-        result_fotos = []
+    @cli.command()
+    def main(
+        file: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False,
+            help="Ruta al archivo (.docx, .pdf, …)"),
+        provider: str = typer.Option("minimax", "--provider", "-p",
+            help="Provider LLM: [cyan]gemini[/], [cyan]glm[/], [cyan]minimax[/]"),
+        ocr: bool = typer.Option(False, "--ocr", "-o", help="Usar OCR"),
+        confirm: bool = typer.Option(False, "--confirm", "-c",
+            help="[yellow]Abrir UI de confirmación en el navegador[/]"),
+        port: int = typer.Option(8000, "--port", help="Puerto para UI de confirmación"),
+    ):
+        """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
+        if confirm:
+            result_data, result_products, result_fotos = asyncio.run(
+                run_with_confirm(str(file), provider, ocr, port)
+            )
+        else:
+            result_data, result_products, fotos = run(str(file), provider=provider, ocr=ocr)
+            result_fotos = []
 
-    print(json.dumps(result_data, ensure_ascii=False, indent=2))
-    for p in result_products:
-        print(p)
+        print(json.dumps(result_data, ensure_ascii=False, indent=2))
+        for p in result_products:
+            print(p)
 
-    output_path = fill_template(result_data, result_products, fotos=result_fotos)
-    print(f"[documento] Generado: {output_path}")
+        output_path = fill_template(result_data, result_products, fotos=result_fotos)
+        typer.echo(f"[green]Documento generado:[/] {output_path}")
+
+    cli()
