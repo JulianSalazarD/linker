@@ -179,51 +179,135 @@ async def run_with_confirm(file_path: str, provider: str, ocr: bool, port: int):
     return confirmed_data, confirmed_products, fotos
 
 
-if __name__ == "__main__":
-    cli = typer.Typer(rich_markup_mode="rich")
+cli = typer.Typer(rich_markup_mode="rich")
 
-    @cli.command()
-    def main(
-        file: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False,
-            help="Ruta al archivo (.docx, .pdf, …)"),
-        provider: str = typer.Option("minimax", "--provider", "-p",
-            help="Provider LLM: [cyan]gemini[/], [cyan]glm[/], [cyan]minimax[/]"),
-        ocr: bool = typer.Option(False, "--ocr", "-o", help="Usar OCR"),
-        confirm: bool = typer.Option(False, "--confirm", "-c",
-            help="[yellow]Abrir UI de confirmación en el navegador[/]"),
-        port: int = typer.Option(8000, "--port", help="Puerto para UI de confirmación"),
-        output_name: str = typer.Option("DOCUMENTO PROCEDIMIENTO INSTALACIÓN", "--output-name", "-n",
-            help="Nombre del documento de salida (sin extensión)"),
-        output_dir: Path = typer.Option(Path("pruebas"), "--output-dir", "-d",
-            help="Directorio donde se guardará el documento"),
-        pdf: bool = typer.Option(False, "--pdf", help="[green]Generar también PDF[/]"),
-        libreoffice: bool = typer.Option(False, "--libreoffice", "-l",
-            help="Usar LibreOffice para PDF en lugar de docx2pdf (Windows)"),
-    ):
-        """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
-        if confirm:
-            result_data, result_products, result_fotos = asyncio.run(
-                run_with_confirm(str(file), provider, ocr, port)
-            )
-        else:
-            result_data, result_products, fotos = run(str(file), provider=provider, ocr=ocr)
-            result_fotos = []
 
-        print(json.dumps(result_data, ensure_ascii=False, indent=2))
-        for p in result_products:
-            print(p)
-
-        output_path, pdf_path = fill_template(
-            result_data,
-            result_products,
-            output_dir=str(output_dir),
-            output_name=output_name,
-            fotos=result_fotos,
-            generate_pdf=pdf,
-            prefer_libreoffice=libreoffice,
+@cli.command()
+def generate(
+    file: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False,
+        help="Ruta al archivo (.docx, .pdf, …)"),
+    provider: str = typer.Option("minimax", "--provider", "-p",
+        help="Provider LLM: [cyan]gemini[/], [cyan]glm[/], [cyan]minimax[/]"),
+    ocr: bool = typer.Option(False, "--ocr", "-o", help="Usar OCR"),
+    confirm: bool = typer.Option(False, "--confirm", "-c",
+        help="[yellow]Abrir UI de confirmación en el navegador[/]"),
+    port: int = typer.Option(8000, "--port", help="Puerto para UI de confirmación"),
+    output_name: str = typer.Option("DOCUMENTO PROCEDIMIENTO INSTALACIÓN", "--output-name", "-n",
+        help="Nombre del documento de salida (sin extensión)"),
+    output_dir: Path = typer.Option(Path("pruebas"), "--output-dir", "-d",
+        help="Directorio donde se guardará el documento"),
+    pdf: bool = typer.Option(False, "--pdf", help="[green]Generar también PDF[/]"),
+    libreoffice: bool = typer.Option(False, "--libreoffice", "-l",
+        help="Usar LibreOffice para PDF en lugar de docx2pdf (Windows)"),
+):
+    """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
+    if confirm:
+        result_data, result_products, result_fotos = asyncio.run(
+            run_with_confirm(str(file), provider, ocr, port)
         )
-        typer.echo(f"[green]DOCX generado:[/] {output_path}")
-        if pdf_path:
-            typer.echo(f"[green]PDF generado:[/] {pdf_path}")
+    else:
+        result_data, result_products, fotos = run(str(file), provider=provider, ocr=ocr)
+        result_fotos = []
 
+    print(json.dumps(result_data, ensure_ascii=False, indent=2))
+    for p in result_products:
+        print(p)
+
+    output_path, pdf_path = fill_template(
+        result_data,
+        result_products,
+        output_dir=str(output_dir),
+        output_name=output_name,
+        fotos=result_fotos,
+        generate_pdf=pdf,
+        prefer_libreoffice=libreoffice,
+    )
+    from rich import print as rprint
+    rprint(f"[green]DOCX generado:[/] {output_path}")
+    if pdf_path:
+        rprint(f"[green]PDF generado:[/] {pdf_path}")
+
+
+@cli.command()
+def install():
+    """[bold yellow]Verificar e instalar[/] dependencias del sistema (tesseract, libreoffice)."""
+    import shutil
+    import platform
+    import subprocess
+
+    system = platform.system().lower()
+    missing: list[str] = []
+    found: list[str] = []
+
+    # ── Tesseract ───────────────────────────────────────────────
+    tess = shutil.which("tesseract")
+    if tess:
+        try:
+            ver = subprocess.check_output([tess, "--version"], stderr=subprocess.STDOUT, text=True).split("\n")[0]
+            found.append(f"tesseract  →  {ver}  ({tess})")
+        except Exception:
+            found.append(f"tesseract  →  {tess}")
+    else:
+        missing.append("tesseract")
+
+    # ── LibreOffice (opcional, para --pdf --libreoffice) ─────────
+    lo = shutil.which("libreoffice") or shutil.which("soffice")
+    if lo:
+        found.append(f"libreoffice  →  {lo}")
+    else:
+        missing.append("libreoffice (opcional, para --pdf --libreoffice)")
+
+    # ── Reporte ─────────────────────────────────────────────────
+    from rich import print as rprint
+
+    rprint()
+    if found:
+        rprint("[bold green]✓ Encontrados:[/]")
+        for f in found:
+            rprint(f"  {f}")
+
+    if missing:
+        rprint()
+        rprint("[bold red]✗ Faltan:[/]")
+        for m in missing:
+            rprint(f"  {m}")
+        rprint()
+        rprint("[bold]Instrucciones de instalación:[/]")
+
+        if "tesseract" in missing:
+            rprint()
+            rprint("  [cyan]tesseract[/] (requerido para OCR):")
+            if system == "linux":
+                rprint("    Ubuntu/Debian:  sudo apt install tesseract-ocr tesseract-ocr-spa")
+                rprint("    Arch/CachyOS:   sudo pacman -S tesseract tesseract-data-spa")
+                rprint("    Fedora:         sudo dnf install tesseract tesseract-langpack-spa")
+            elif system == "darwin":
+                rprint("    brew install tesseract tesseract-lang")
+            elif system == "windows":
+                rprint("    Descargar instalador: https://github.com/UB-Mannheim/tesseract/wiki")
+                rprint("    Agregar al PATH o configurar en Python:")
+                rprint('    pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"')
+
+        if any("libreoffice" in m for m in missing):
+            rprint()
+            rprint("  [cyan]libreoffice[/] (opcional, conversión a PDF):")
+            if system == "linux":
+                rprint("    Ubuntu/Debian:  sudo apt install libreoffice")
+                rprint("    Arch/CachyOS:   sudo pacman -S libreoffice-still")
+            elif system == "darwin":
+                rprint("    brew install --cask libreoffice")
+            elif system == "windows":
+                rprint("    Descargar: https://www.libreoffice.org/download/")
+    else:
+        rprint()
+        rprint("[bold green]Todas las dependencias del sistema están instaladas.[/]")
+
+    # ── Dependencias Python ─────────────────────────────────────
+    rprint()
+    rprint("[bold]Dependencias Python:[/]")
+    rprint("  Instalar con:  [cyan]uv pip install .[/]")
+    rprint("  O bien:        [cyan]pip install .[/]")
+
+
+if __name__ == "__main__":
     cli()
