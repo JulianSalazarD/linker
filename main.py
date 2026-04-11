@@ -2,12 +2,14 @@
 Pipeline completo: extracción de archivo → inferencia con LLM → confirmación.
 
 Uso:
-    python main.py <archivo> [--provider gemini|glm|minimax] [--ocr] [--confirm] [--port 8000]
+    python main.py <archivo> [-p provider] [-o] [-c] [--port 8000]
+                     [-n nombre] [-d directorio] [--pdf] [-l]
 
 Ejemplos:
     python main.py "archivo.docx"
     python main.py "archivo.pdf" --ocr --confirm
     python main.py "archivo.docx" --provider gemini --confirm
+    python main.py "archivo.pdf" -n "MI INFORME" -d "salida" --pdf
 """
 from __future__ import annotations
 
@@ -190,6 +192,13 @@ if __name__ == "__main__":
         confirm: bool = typer.Option(False, "--confirm", "-c",
             help="[yellow]Abrir UI de confirmación en el navegador[/]"),
         port: int = typer.Option(8000, "--port", help="Puerto para UI de confirmación"),
+        output_name: str = typer.Option("DOCUMENTO PROCEDIMIENTO INSTALACIÓN", "--output-name", "-n",
+            help="Nombre del documento de salida (sin extensión)"),
+        output_dir: Path = typer.Option(Path("pruebas"), "--output-dir", "-d",
+            help="Directorio donde se guardará el documento"),
+        pdf: bool = typer.Option(False, "--pdf", help="[green]Generar también PDF[/]"),
+        libreoffice: bool = typer.Option(False, "--libreoffice", "-l",
+            help="Usar LibreOffice para PDF en lugar de docx2pdf (Windows)"),
     ):
         """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
         if confirm:
@@ -204,7 +213,17 @@ if __name__ == "__main__":
         for p in result_products:
             print(p)
 
-        output_path = fill_template(result_data, result_products, fotos=result_fotos)
-        typer.echo(f"[green]Documento generado:[/] {output_path}")
+        output_path, pdf_path = fill_template(
+            result_data,
+            result_products,
+            output_dir=str(output_dir),
+            output_name=output_name,
+            fotos=result_fotos,
+            generate_pdf=pdf,
+            prefer_libreoffice=libreoffice,
+        )
+        typer.echo(f"[green]DOCX generado:[/] {output_path}")
+        if pdf_path:
+            typer.echo(f"[green]PDF generado:[/] {pdf_path}")
 
     cli()

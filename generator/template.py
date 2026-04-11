@@ -1,4 +1,7 @@
 import math
+import os
+import platform
+import subprocess
 from docxtpl import DocxTemplate, RichText, InlineImage
 from docx.shared import Mm
 from io import BytesIO
@@ -18,6 +21,39 @@ _MESES = [
 def _fmt(n) -> str:
     """Formatea un número como entero con separador de miles (.)."""
     return f"{int(n):,}".replace(",", ".")
+
+
+def convert_to_pdf(docx_path: Path, prefer_libreoffice: bool = False) -> Path | None:
+    """Convierte un DOCX a PDF usando docx2pdf (Windows) o LibreOffice (Linux/macOS).
+    Retorna el Path del PDF o None si falla."""
+    docx_path = Path(docx_path)
+
+    # docx2pdf solo funciona en Windows
+    if not prefer_libreoffice and platform.system() == "Windows":
+        try:
+            from docx2pdf import convert
+            convert(str(docx_path), str(docx_path.with_suffix(".pdf")))
+            pdf_path = docx_path.with_suffix(".pdf")
+            return pdf_path if pdf_path.exists() else None
+        except Exception:
+            pass
+
+    # Intentar LibreOffice (Linux/macOS/Windows con LibreOffice instalado)
+    for cmd in ["soffice", "libreoffice", "/usr/bin/soffice"]:
+        try:
+            subprocess.run(
+                [cmd, "--headless", "--convert-to", "pdf", "--outdir", str(docx_path.parent), str(docx_path)],
+                check=True,
+                capture_output=True,
+                timeout=60,
+            )
+            pdf_path = docx_path.with_suffix(".pdf")
+            if pdf_path.exists():
+                return pdf_path
+        except Exception:
+            pass
+
+    return None
 
 
 _IF_BLOCK = re.compile(r'\{%-?\s*if\s+\w+\s*-?%\}.*\{%-?\s*endif\s*-?%\}', re.DOTALL)
@@ -84,9 +120,16 @@ def fill_template(
     products: list,
     template_path: str = "config/template_base.docx",
     output_dir: str = "pruebas",
+    output_name: str = "DOCUMENTO PROCEDIMIENTO INSTALACIÓN",
     fotos: list[dict] | None = None,
-) -> Path:
-    """Rellena template_base.docx con los datos extraídos y guarda el resultado."""
+    generate_pdf: bool = False,
+    prefer_libreoffice: bool = False,
+) -> tuple[Path, Path | None]:
+    """Rellena template_base.docx con los datos extraídos y guarda el resultado.
+
+    Returns:
+        tuple[Path, Path | None]: (path_al_documento_docx, path_al_pdf_o_None)
+    """
     tmp_template = _prepare_template(template_path)
 
     try:
@@ -138,12 +181,17 @@ def fill_template(
 
         tpl.render(context)
 
-        direccion_slug = re.sub(r'[^\w\s-]', '', data.get("direccion", "documento")).strip().replace(" ", "_")
-        timestamp = hoy.strftime("%Y%m%d")
-        output_path = Path(output_dir) / f"{direccion_slug}_{timestamp}.docx"
+        output_path = Path(output_dir) / f"{output_name}.docx"
         tpl.save(output_path)
     finally:
         Path(tmp_template).unlink(missing_ok=True)
 
     _remove_null_paragraphs(output_path)
-    return output_path
+
+    pdf_path = None
+    if generate_pdf:
+        pdf_path = convert_to_pdf(output_path, prefer_libreoffice=prefer_libreoffice)
+        if pdf_path is None:
+            print("[red]Error generando PDF[/]")
+
+    return output_path, pdf_path
