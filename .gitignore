@@ -6,3 +6,6 @@ uv.lock
 config/*.docx
 config/data.lock
 __pycache__/
+
+
+main.ipynb
