@@ -246,6 +246,30 @@ document.addEventListener("DOMContentLoaded", () => {
     input.click();
   });
 
+  // ── Pegar imagen desde portapapeles (Ctrl+V) ───────
+  document.addEventListener("paste", (e) => {
+    if (currentStep !== 3) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const fullB64 = ev.target.result.split(",")[1];
+          // Quitar el mensaje de "no hay imágenes" si existe
+          const hint = photoList.querySelector(".hint");
+          if (hint) hint.remove();
+          const idx = photoList.querySelectorAll(".photo-item").length;
+          photoList.appendChild(createPhotoItem(fullB64, fullB64, "", idx));
+          renumberPhotos();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  });
+
   document.getElementById("btn-back-3").addEventListener("click", () => showStep(2));
 
   document.getElementById("btn-confirm").addEventListener("click", async () => {
@@ -324,6 +348,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Limpiar overlays anteriores del DOM
     canvasWrap.querySelectorAll(".overlay-placed").forEach(el => el.remove());
 
+    // Sincronizar caption del photo-item al editor
+    const editorCaption = document.getElementById("editor-caption");
+    const srcCaption = photoDiv.querySelector(".caption");
+    editorCaption.value = srcCaption ? srcCaption.value : "";
+
     // Cargar imagen base desde fullB64
     baseImage = new Image();
     baseImage.onload = () => {
@@ -342,9 +371,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (save) {
       const exportB64 = exportCanvas();
       editorPhotoDiv.dataset.fullB64 = exportB64;
-      // Actualizar thumbnail visible
       editorPhotoDiv.querySelector("img").src = "data:image/jpeg;base64," + exportB64;
     }
+    // Sincronizar caption del editor de vuelta al photo-item
+    const editorCaption = document.getElementById("editor-caption");
+    const srcCaption = editorPhotoDiv.querySelector(".caption");
+    if (srcCaption) srcCaption.value = editorCaption.value;
+
     // Limpiar overlays del DOM
     canvasWrap.querySelectorAll(".overlay-placed").forEach(el => el.remove());
     placedOverlays = [];
@@ -653,6 +686,46 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     return tmpCanvas.toDataURL("image/jpeg", 0.95).split(",")[1];
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PANEL RESIZER (drag para redimensionar doc/form)
+  // ══════════════════════════════════════════════════════
+  const resizer = document.getElementById("panel-resizer");
+  const panelDoc = document.querySelector(".panel-doc");
+  const panelForm = document.getElementById("panel-form");
+
+  if (resizer && panelDoc && panelForm) {
+    let isResizing = false;
+
+    resizer.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      isResizing = true;
+      resizer.classList.add("dragging");
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isResizing) return;
+      const layout = document.querySelector(".layout");
+      const layoutRect = layout.getBoundingClientRect();
+      const offsetX = e.clientX - layoutRect.left;
+      const total = layoutRect.width;
+      const docWidth = Math.max(200, Math.min(total - 340, offsetX));
+      panelDoc.style.flex = "none";
+      panelDoc.style.width = docWidth + "px";
+      panelForm.style.flex = "1";
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    });
   }
 
   // Iniciar en paso 1

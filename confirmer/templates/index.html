@@ -25,8 +25,11 @@
     {% endif %}
   </div>
 
+  <!-- ── Resizer ─────────────────────────────────────── -->
+  <div class="panel-resizer" id="panel-resizer"></div>
+
   <!-- ── Panel derecho: wizard ───────────────────────── -->
-  <div class="panel-form">
+  <div class="panel-form" id="panel-form">
 
     <!-- Indicador de pasos -->
     <div class="wizard-steps">
@@ -87,6 +90,7 @@
     <div id="step-photos" class="step-content hidden">
       <h2>Fotos y pies de foto</h2>
       <p class="hint">Usa [corchetes] para marcar texto en rojo en el documento final.</p>
+      <p class="paste-hint">Ctrl+V para pegar imagen desde el portapapeles</p>
       <div id="photo-list"></div>
       <div class="form-actions">
         <button id="btn-add-photo" class="btn btn-add">+ Agregar imagen</button>
@@ -125,6 +129,10 @@
     <button id="btn-undo" class="tool-btn">Deshacer</button>
     <button id="btn-editor-cancel" class="tool-btn">Cancelar</button>
     <button id="btn-editor-save" class="tool-btn btn-save">Guardar</button>
+  </div>
+  <div class="editor-caption-bar" id="editor-caption-bar">
+    <label>Pie de foto:</label>
+    <textarea id="editor-caption" rows="2" placeholder="Pie de foto..."></textarea>
   </div>
   <div class="editor-body">
     <div class="editor-canvas-wrap" id="editor-canvas-wrap">

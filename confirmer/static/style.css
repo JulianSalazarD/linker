@@ -27,6 +27,17 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
   overflow: hidden;
 }
 
+/* ── Drag handle para redimensionar paneles ───── */
+.panel-resizer {
+  width: 6px;
+  cursor: col-resize;
+  background: #d1d5db;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.panel-resizer:hover,
+.panel-resizer.dragging { background: #6366f1; }
+
 /* ── Panel izquierdo: documento ────────────────────── */
 .panel-doc {
   flex: 1;
@@ -65,8 +76,8 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
 
 /* ── Panel derecho: wizard ────────────────────────── */
 .panel-form {
-  width: 480px;
-  min-width: 380px;
+  flex: 1;
+  min-width: 340px;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -596,4 +607,67 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
   flex-direction: column;
   align-items: center;
   gap: 2px;
+}
+
+/* ── Caption bar en editor modal ─────────────────── */
+.editor-caption-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: #334155;
+  border-bottom: 1px solid #475569;
+  flex-shrink: 0;
+}
+
+.editor-caption-bar label {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.editor-caption-bar textarea {
+  flex: 1;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
+  background: #1e293b;
+  color: #f8fafc;
+  outline: none;
+  resize: none;
+}
+.editor-caption-bar textarea:focus { border-color: #6366f1; }
+
+/* ── Paste hint ──────────────────────────────────── */
+.paste-hint {
+  padding: 4px 14px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ── Responsive: pantallas pequeñas ──────────────── */
+@media (max-width: 860px) {
+  .layout {
+    flex-direction: column-reverse;
+  }
+
+  .panel-doc {
+    border-right: none;
+    border-top: 1px solid #d1d5db;
+    max-height: 35vh;
+    min-height: 120px;
+  }
+
+  .panel-form {
+    min-width: unset;
+    flex: 1;
+  }
+
+  .panel-resizer {
+    display: none;
+  }
 }
