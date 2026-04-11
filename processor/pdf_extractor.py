@@ -103,12 +103,12 @@ class PdfExtractor(BaseExtractor):
                 if text.strip():
                     pages_text.append(text)
 
-                # # Página escaneada: OCR para extraer texto
-                # if not text.strip():
-                #     pil_img = page.to_image(resolution=200).original
-                #     ocr_text = ocr_image(pil_img)
-                #     if ocr_text.strip():
-                #         pages_text.append(ocr_text)
+                # Página escaneada: OCR para extraer texto
+                if not text.strip():
+                    pil_img = page.to_image(resolution=200).original
+                    ocr_text = ocr_image(pil_img)
+                    if ocr_text.strip():
+                        pages_text.append(ocr_text)
 
                 # Renderizar página y extraer fotos embebidas
                 pil_img = page.to_image(resolution=200).original
