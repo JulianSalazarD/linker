@@ -59,6 +59,14 @@ _jinja_env = Environment(loader=FileSystemLoader(str(_here / "templates")), auto
 _jinja_env.filters["basename"] = lambda p: Path(p).name
 
 
+def _load_caption_templates() -> dict:
+    cfg_path = Path(_root) / "config" / "images.json"
+    if cfg_path.exists():
+        with open(cfg_path, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
 @app.get("/")
 async def index():
     assert _content is not None
@@ -66,6 +74,7 @@ async def index():
         "data": _data,
         "products": _products_dicts,
         "captions": _captions,
+        "caption_templates": _load_caption_templates(),
     }, ensure_ascii=False)
     html = _jinja_env.get_template("index.html").render(
         viewer_type=get_viewer_type(_content),

@@ -649,6 +649,74 @@ header h1 { font-size: 15px; font-weight: 600; flex: 1; }
   font-style: italic;
 }
 
+/* ── Caption picker modal ────────────────────────── */
+.caption-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caption-picker {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  width: 460px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0,0,0,.3);
+}
+
+.caption-picker h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.caption-picker-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.caption-picker-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all .15s;
+}
+.caption-picker-btn:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+.caption-picker-btn strong {
+  font-size: 13px;
+  color: #1e293b;
+}
+.caption-picker-btn span {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.caption-picker-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 /* ── Responsive: pantallas pequeñas ──────────────── */
 @media (max-width: 860px) {
   .layout {

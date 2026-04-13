@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentStep = 1;
   let imagesCache = null;       // thumbnails para mostrar
   let imagesFullCache = null;    // full-size para el docx
+  const captionTemplates = initial.caption_templates || {};
+  let confirmedApartamento = "";  // se actualiza al confirmar datos
 
   // ── Utilidades ──────────────────────────────────────
   function escHtml(s) {
@@ -14,6 +16,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function fmtNum(n) {
     return Number(n).toLocaleString("es-CO");
+  }
+
+  // ── Generador de pies de foto ───────────────────────
+  function generateCaption(index, totalImages) {
+    let key;
+    if (index === 0) key = "1";
+    else if (index === totalImages - 1) key = "final";
+    else key = "n";
+    const tpl = captionTemplates[key] || "";
+    const text = tpl.replace(/\{\{\s*apartamento\s*\}\}/g, confirmedApartamento);
+    return `Ilustración ${index + 1}. ${text}`;
+  }
+
+  function getCaptionTemplateNames() {
+    return Object.entries(captionTemplates).map(([key, tpl]) => {
+      const label = key === "1" ? "Primera foto" : key === "final" ? "Última foto" : "Foto intermedia";
+      return { key, label, tpl };
+    });
   }
 
   // ── Navegación wizard ───────────────────────────────
@@ -70,10 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("btn-next-1");
     btn.disabled = true;
     btn.textContent = "Guardando…";
+    const fields = collectFields();
+    confirmedApartamento = fields.apartamento || "";
     await fetch("/confirm/data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fields: collectFields() }),
+      body: JSON.stringify({ fields }),
     });
     btn.disabled = false;
     btn.textContent = "Siguiente";
@@ -215,15 +237,73 @@ document.addEventListener("DOMContentLoaded", () => {
     if (photosPopulated) return;
     photosPopulated = true;
     const imgs = imagesCache || [];
-    const captions = initial.captions || [];
     const fullImgs = imagesFullCache || [];
+    const totalImages = imgs.length;
     imgs.forEach((b64, i) => {
-      const cap = captions[i] || { index: i, caption: "" };
-      photoList.appendChild(createPhotoItem(b64, fullImgs[i] || b64, cap.caption, i));
+      const caption = generateCaption(i, totalImages);
+      photoList.appendChild(createPhotoItem(b64, fullImgs[i] || b64, caption, i));
     });
     if (imgs.length === 0) {
       photoList.innerHTML = '<p class="hint">No se encontraron imágenes en el documento.</p>';
     }
+  }
+
+  // ── Selector de pie de foto por defecto ──────────────
+  function addImageWithCaption(fullB64) {
+    const hint = photoList.querySelector(".hint");
+    if (hint) hint.remove();
+
+    const templates = getCaptionTemplateNames();
+    if (templates.length === 0) {
+      // Sin templates, agregar sin caption
+      const idx = photoList.querySelectorAll(".photo-item").length;
+      photoList.appendChild(createPhotoItem(fullB64, fullB64, "", idx));
+      renumberPhotos();
+      return;
+    }
+
+    // Mostrar selector modal
+    const overlay = document.createElement("div");
+    overlay.className = "caption-picker-overlay";
+    overlay.innerHTML = `
+      <div class="caption-picker">
+        <h3>Seleccionar pie de foto</h3>
+        <div class="caption-picker-options"></div>
+        <div class="caption-picker-actions">
+          <button class="btn btn-back btn-picker-empty">Sin pie de foto</button>
+          <button class="btn btn-back btn-picker-cancel">Cancelar</button>
+        </div>
+      </div>
+    `;
+
+    const optionsDiv = overlay.querySelector(".caption-picker-options");
+    templates.forEach(({ key, label, tpl }) => {
+      const btn = document.createElement("button");
+      btn.className = "caption-picker-btn";
+      const preview = tpl.replace(/\{\{\s*apartamento\s*\}\}/g, confirmedApartamento);
+      btn.innerHTML = `<strong>${escHtml(label)}</strong><span>${escHtml(preview.substring(0, 80))}${preview.length > 80 ? "…" : ""}</span>`;
+      btn.addEventListener("click", () => {
+        const idx = photoList.querySelectorAll(".photo-item").length;
+        const caption = `Ilustración ${idx + 1}. ${preview}`;
+        photoList.appendChild(createPhotoItem(fullB64, fullB64, caption, idx));
+        renumberPhotos();
+        overlay.remove();
+      });
+      optionsDiv.appendChild(btn);
+    });
+
+    overlay.querySelector(".btn-picker-empty").addEventListener("click", () => {
+      const idx = photoList.querySelectorAll(".photo-item").length;
+      photoList.appendChild(createPhotoItem(fullB64, fullB64, "", idx));
+      renumberPhotos();
+      overlay.remove();
+    });
+
+    overlay.querySelector(".btn-picker-cancel").addEventListener("click", () => {
+      overlay.remove();
+    });
+
+    document.body.appendChild(overlay);
   }
 
   document.getElementById("btn-add-photo").addEventListener("click", () => {
@@ -235,10 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
       Array.from(input.files).forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const fullB64 = e.target.result.split(",")[1];
-          const idx = photoList.querySelectorAll(".photo-item").length;
-          photoList.appendChild(createPhotoItem(fullB64, fullB64, "", idx));
-          renumberPhotos();
+          addImageWithCaption(e.target.result.split(",")[1]);
         };
         reader.readAsDataURL(file);
       });
@@ -257,13 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const file = item.getAsFile();
         const reader = new FileReader();
         reader.onload = (ev) => {
-          const fullB64 = ev.target.result.split(",")[1];
-          // Quitar el mensaje de "no hay imágenes" si existe
-          const hint = photoList.querySelector(".hint");
-          if (hint) hint.remove();
-          const idx = photoList.querySelectorAll(".photo-item").length;
-          photoList.appendChild(createPhotoItem(fullB64, fullB64, "", idx));
-          renumberPhotos();
+          addImageWithCaption(ev.target.result.split(",")[1]);
         };
         reader.readAsDataURL(file);
       }
