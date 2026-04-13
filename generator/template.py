@@ -72,7 +72,7 @@ def _increment_quote_number() -> str:
             with open(CONFIG_PATH, "r") as f:
                 config = json.load(f)
             current = int(config.get("number", "0"))
-            new_number = str(current + 1)
+            new_number = str(current + 1).zfill(5)
             config["number"] = new_number
             tmp_path = CONFIG_PATH.with_suffix(".tmp")
             with open(tmp_path, "w") as f:

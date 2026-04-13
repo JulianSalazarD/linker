@@ -194,13 +194,16 @@ def generate(
     port: int = typer.Option(8000, "--port", help="Puerto para UI de confirmación"),
     output_name: str = typer.Option("DOCUMENTO PROCEDIMIENTO INSTALACIÓN", "--output-name", "-n",
         help="Nombre del documento de salida (sin extensión)"),
-    output_dir: Path = typer.Option(Path("pruebas"), "--output-dir", "-d",
-        help="Directorio donde se guardará el documento"),
+    output_dir: Path = typer.Option(None, "--output-dir", "-d",
+        help="Directorio donde se guardará el documento (por defecto: carpeta del archivo de entrada)"),
     pdf: bool = typer.Option(False, "--pdf", help="[green]Generar también PDF[/]"),
     libreoffice: bool = typer.Option(False, "--libreoffice", "-l",
         help="Usar LibreOffice para PDF en lugar de docx2pdf (Windows)"),
 ):
     """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
+    if output_dir is None:
+        output_dir = file.parent
+
     if confirm:
         result_data, result_products, result_fotos = asyncio.run(
             run_with_confirm(str(file), provider, ocr, port)
