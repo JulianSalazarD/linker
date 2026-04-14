@@ -8,7 +8,6 @@ from io import BytesIO
 from datetime import date
 import re
 import tempfile
-import fcntl
 import json
 from pathlib import Path
 from docx import Document
@@ -62,12 +61,34 @@ _SENTINEL = "\u00abCOND\u00bb"  # «COND» — marca párrafos condicionales
 CONFIG_PATH = Path("config/data.json")
 
 
+if platform.system() == "Windows":
+    import msvcrt
+
+    def _lock(f):
+        msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+
+    def _unlock(f):
+        try:
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+else:
+    import fcntl
+
+    def _lock(f):
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+
+    def _unlock(f):
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+
 def _increment_quote_number() -> str:
     """Atomically reads and increments the quote number in config/data.json.
     Uses file locking to prevent race conditions."""
     lock_path = CONFIG_PATH.with_suffix(".lock")
     with open(lock_path, "w") as lockf:
-        fcntl.flock(lockf.fileno(), fcntl.LOCK_EX)
+        _lock(lockf)
         try:
             with open(CONFIG_PATH, "r") as f:
                 config = json.load(f)
@@ -80,7 +101,7 @@ def _increment_quote_number() -> str:
             Path(tmp_path).replace(CONFIG_PATH)
             return new_number
         finally:
-            fcntl.flock(lockf.fileno(), fcntl.LOCK_UN)
+            _unlock(lockf)
 
 
 def _prepare_template(template_path: str) -> str:
