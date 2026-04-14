@@ -78,13 +78,14 @@ def build_richtext_fotos(confirmed_fotos: list[dict]) -> list[dict]:
         else:
             prefix, body = "", text
 
-        rt.add(prefix, color="1F497D")
+        style = {"font": "Arial Nova Cond", "size": 24}
+        rt.add(prefix, color="1F497D", **style)
         parts = re.split(r'(\[.*?\])', body)
         for part in parts:
             if part.startswith("[") and part.endswith("]"):
-                rt.add(part[1:-1], color="FF0000")
+                rt.add(part[1:-1], color="FF0000", **style)
             else:
-                rt.add(part, color="1F497D")
+                rt.add(part, color="1F497D", **style)
 
         fotos.append({"imagen": pil_img, "pie": rt})
 
