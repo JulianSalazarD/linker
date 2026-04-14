@@ -48,7 +48,8 @@
   "models": {
     "gemini": "gemini-2.0-flash",
     "glm": "glm-4-flash",
-    "minimax": "MiniMax-M7"
+    "minimax": "MiniMax-M7",
+    "openrouter": "openrouter/free"
   },
-  "number": "00120"
+  "number": "00123"
 }

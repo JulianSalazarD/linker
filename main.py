@@ -187,8 +187,8 @@ cli = typer.Typer(rich_markup_mode="rich")
 def generate(
     file: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False,
         help="Ruta al archivo (.docx, .pdf, …)"),
-    provider: str = typer.Option("minimax", "--provider", "-p",
-        help="Provider LLM: [cyan]gemini[/], [cyan]glm[/], [cyan]minimax[/]"),
+    provider: str = typer.Option("openrouter", "--provider", "-p",
+        help="Provider LLM: [cyan]gemini[/], [cyan]glm[/], [cyan]minimax[/], [cyan]openrouter[/]"),
     ocr: bool = typer.Option(False, "--ocr", "-o", help="Usar OCR"),
     confirm: bool = typer.Option(False, "--confirm", "-c",
         help="[yellow]Abrir UI de confirmación en el navegador[/]"),

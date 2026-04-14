@@ -10,6 +10,7 @@ dependencies = [
     "Pillow",
     "langchain-anthropic",
     "langchain-google-genai",
+    "langchain-openai",
     "python-dotenv",
     "ipywidgets",
     "openpyxl>=3.1.5",

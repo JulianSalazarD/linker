@@ -55,7 +55,7 @@ linker generate archivo.pdf -n "MI INFORME" -d salida --pdf
 
 | Opcion | Corto | Descripcion |
 |---|---|---|
-| `--provider` | `-p` | Provider LLM: `gemini`, `glm`, `minimax` (default: `minimax`) |
+| `--provider` | `-p` | Provider LLM: `gemini`, `glm`, `minimax`, `openrouter` (default: `openrouter`) |
 | `--ocr` | `-o` | Usar OCR con Tesseract |
 | `--confirm` | `-c` | Abrir UI de confirmacion en el navegador |
 | `--port` | | Puerto para la UI (default: `8000`) |
@@ -71,7 +71,7 @@ linker/
   main.py            # CLI y pipeline principal
   config/            # Templates, prompts, imagenes y configuracion
   processor/         # Extraccion de contenido (DOCX, PDF, OCR)
-  llm_client/        # Clientes LLM (Gemini, GLM, MiniMax)
+  llm_client/        # Clientes LLM (Gemini, GLM, MiniMax, OpenRouter)
   products/          # Logica de productos y cotizaciones
   generator/         # Generacion de documentos DOCX
   confirmer/         # UI web (FastAPI) para confirmar datos
@@ -87,6 +87,7 @@ ANTHROPIC_API_KEY=...
 GOOGLE_API_KEY=...
 ZHIPU_API_KEY=...
 MINIMAX_API_KEY=...
+OPENROUTER_API_KEY=...
 ```
 
 ## Licencia

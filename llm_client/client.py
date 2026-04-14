@@ -57,7 +57,7 @@ def get_client(provider: str) -> BaseLLMClient:
 def extract_data(
     text: str,
     file_path: str,
-    provider: str = "minimax",
+    provider: str = "openrouter",
     data_path: str = "config/data.json",
     prompt_path: str = "config/prompt.md",
 ) -> dict:
@@ -95,12 +95,12 @@ if __name__ == "__main__":
 
     load_dotenv(find_dotenv())
 
-    for _mod in ["llm_client.gemini", "llm_client.glm", "llm_client.minimax"]:
+    for _mod in ["llm_client.gemini", "llm_client.glm", "llm_client.minimax", "llm_client.openrouter"]:
         __import__(_mod)
     from llm_client.client import extract_data as _extract_data
 
-    # Proveedor por argumento, por defecto minimax
-    _provider = sys.argv[1] if len(sys.argv) > 1 else "minimax"
+    # Proveedor por argumento, por defecto openrouter
+    _provider = sys.argv[1] if len(sys.argv) > 1 else "openrouter"
     # Archivo de prueba por argumento, por defecto el primero en pruebas/
     _fp = sys.argv[2] if len(sys.argv) > 2 else "pruebas/carera 26 No 50 - 47_260318_200729.docx"
 

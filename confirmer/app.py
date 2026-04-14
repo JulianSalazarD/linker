@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="UI de confirmación de datos extraídos.")
     parser.add_argument("file", help="Ruta al archivo (.docx, .pdf, …)")
-    parser.add_argument("--provider", default="minimax", choices=["gemini", "glm", "minimax"])
+    parser.add_argument("--provider", default="openrouter", choices=["gemini", "glm", "minimax", "openrouter"])
     parser.add_argument("--ocr", action="store_true")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
