@@ -200,6 +200,8 @@ def generate(
     pdf: bool = typer.Option(False, "--pdf", help="[green]Generar también PDF[/]"),
     libreoffice: bool = typer.Option(False, "--libreoffice", "-l",
         help="Usar LibreOffice para PDF en lugar de docx2pdf (Windows)"),
+    onlyoffice: bool = typer.Option(False, "--onlyoffice",
+        help="Usar OnlyOffice Document Server para PDF"),
 ):
     """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
     if output_dir is None:
@@ -225,6 +227,7 @@ def generate(
         fotos=result_fotos,
         generate_pdf=pdf,
         prefer_libreoffice=libreoffice,
+        prefer_onlyoffice=onlyoffice,
     )
     from rich import print as rprint
     rprint(f"[green]DOCX generado:[/] {output_path}")
@@ -260,6 +263,13 @@ def install():
         found.append(f"libreoffice  →  {lo}")
     else:
         missing.append("libreoffice (opcional, para --pdf --libreoffice)")
+
+    # ── OnlyOffice (opcional, para --pdf --onlyoffice) ───────────
+    oo = shutil.which("documentserver-convert")
+    if oo:
+        found.append(f"onlyoffice  →  {oo}")
+    else:
+        missing.append("onlyoffice (opcional, para --pdf --onlyoffice)")
 
     # ── Reporte ─────────────────────────────────────────────────
     from rich import print as rprint
@@ -302,6 +312,19 @@ def install():
                 rprint("    brew install --cask libreoffice")
             elif system == "windows":
                 rprint("    Descargar: https://www.libreoffice.org/download/")
+
+        if any("onlyoffice" in m for m in missing):
+            rprint()
+            rprint("  [cyan]onlyoffice[/] (opcional, conversión a PDF):")
+            if system == "linux":
+                rprint("    Ver docs: https://helpcenter.onlyoffice.com/installation/docs-community-install-ubuntu.aspx")
+                rprint("    Ubuntu/Debian: Instalar OnlyOffice Document Server")
+                rprint("    Incluye documentserver-convert para conversión CLI")
+            elif system == "darwin":
+                rprint("    Ver: https://www.onlyoffice.com/download-desktop.aspx")
+            elif system == "windows":
+                rprint("    Descargar: https://www.onlyoffice.com/download-desktop.aspx")
+                rprint("    Instalar Document Server para usar documentserver-convert")
     else:
         rprint()
         rprint("[bold green]Todas las dependencias del sistema están instaladas.[/]")

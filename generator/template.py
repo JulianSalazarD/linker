@@ -22,13 +22,13 @@ def _fmt(n) -> str:
     return f"{int(n):,}".replace(",", ".")
 
 
-def convert_to_pdf(docx_path: Path, prefer_libreoffice: bool = False) -> Path | None:
-    """Convierte un DOCX a PDF usando docx2pdf (Windows) o LibreOffice (Linux/macOS).
+def convert_to_pdf(docx_path: Path, prefer_libreoffice: bool = False, prefer_onlyoffice: bool = False) -> Path | None:
+    """Convierte un DOCX a PDF usando docx2pdf (Windows), OnlyOffice o LibreOffice.
     Retorna el Path del PDF o None si falla."""
     docx_path = Path(docx_path)
 
     # docx2pdf solo funciona en Windows
-    if not prefer_libreoffice and platform.system() == "Windows":
+    if not prefer_libreoffice and not prefer_onlyoffice and platform.system() == "Windows":
         try:
             from docx2pdf import convert
             convert(str(docx_path), str(docx_path.with_suffix(".pdf")))
@@ -36,6 +36,22 @@ def convert_to_pdf(docx_path: Path, prefer_libreoffice: bool = False) -> Path | 
             return pdf_path if pdf_path.exists() else None
         except Exception:
             pass
+
+    # Intentar OnlyOffice Document Server CLI
+    if prefer_onlyoffice:
+        for cmd in ["documentserver-convert", "/usr/bin/documentserver-convert"]:
+            try:
+                subprocess.run(
+                    [cmd, "--input", str(docx_path), "--output", str(docx_path.with_suffix(".pdf"))],
+                    check=True,
+                    capture_output=True,
+                    timeout=60,
+                )
+                pdf_path = docx_path.with_suffix(".pdf")
+                if pdf_path.exists():
+                    return pdf_path
+            except Exception:
+                pass
 
     # Intentar LibreOffice (Linux/macOS/Windows con LibreOffice instalado)
     for cmd in ["soffice", "libreoffice", "/usr/bin/soffice"]:
@@ -145,6 +161,7 @@ def fill_template(
     fotos: list[dict] | None = None,
     generate_pdf: bool = False,
     prefer_libreoffice: bool = False,
+    prefer_onlyoffice: bool = False,
 ) -> tuple[Path, Path | None]:
     """Rellena template_base.docx con los datos extraídos y guarda el resultado.
 
@@ -211,7 +228,7 @@ def fill_template(
 
     pdf_path = None
     if generate_pdf:
-        pdf_path = convert_to_pdf(output_path, prefer_libreoffice=prefer_libreoffice)
+        pdf_path = convert_to_pdf(output_path, prefer_libreoffice=prefer_libreoffice, prefer_onlyoffice=prefer_onlyoffice)
         if pdf_path is None:
             print("[red]Error generando PDF[/]")
 
