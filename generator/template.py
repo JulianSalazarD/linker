@@ -179,7 +179,7 @@ def fill_template(
                 buf = BytesIO()
                 foto["imagen"].save(buf, format="PNG")
                 buf.seek(0)
-                foto["imagen"] = InlineImage(tpl, image_descriptor=buf, width=Mm(150))
+                foto["imagen"] = InlineImage(tpl, image_descriptor=buf, width=Mm(130))
 
         hoy = date.today()
         fecha = f"{hoy.day} de {_MESES[hoy.month - 1]} de {hoy.year}"
