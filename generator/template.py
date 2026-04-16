@@ -11,6 +11,7 @@ import tempfile
 import json
 from pathlib import Path
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 _MESES = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -135,8 +136,8 @@ def _prepare_template(template_path: str) -> str:
 
 
 def _remove_null_paragraphs(output_path: Path):
-    """Elimina párrafos donde el sentinel quedó solo (condición False)
-    y limpia el sentinel de los párrafos donde la condición fue True."""
+    """Elimina párrafos sentinel, limpia sentinels de los True,
+    y centra los párrafos que contienen imágenes."""
     doc = Document(str(output_path))
     to_remove = []
     for para in doc.paragraphs:
@@ -147,6 +148,8 @@ def _remove_null_paragraphs(output_path: Path):
                 if _SENTINEL in run.text:
                     run.text = run.text.replace(_SENTINEL, "")
                     break
+        if "<w:drawing" in para._element.xml:
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for para in to_remove:
         para._element.getparent().remove(para._element)
     doc.save(str(output_path))
@@ -179,7 +182,7 @@ def fill_template(
                 buf = BytesIO()
                 foto["imagen"].save(buf, format="PNG")
                 buf.seek(0)
-                foto["imagen"] = InlineImage(tpl, image_descriptor=buf, width=Mm(130))
+                foto["imagen"] = InlineImage(tpl, image_descriptor=buf, width=Mm(145))
 
         hoy = date.today()
         fecha = f"{hoy.day} de {_MESES[hoy.month - 1]} de {hoy.year}"
