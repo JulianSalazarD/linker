@@ -202,6 +202,8 @@ def generate(
         help="Usar LibreOffice para PDF en lugar de docx2pdf (Windows)"),
     onlyoffice: bool = typer.Option(False, "--onlyoffice",
         help="Usar OnlyOffice Document Server para PDF"),
+    textmaker: bool = typer.Option(False, "--textmaker", "-t",
+        help="Usar SoftMaker TextMaker24 (FreeOffice) para PDF"),
 ):
     """[bold blue]Pipeline completo[/]: extracción de archivo → inferencia LLM → confirmación."""
     if output_dir is None:
@@ -228,6 +230,7 @@ def generate(
         generate_pdf=pdf,
         prefer_libreoffice=libreoffice,
         prefer_onlyoffice=onlyoffice,
+        prefer_textmaker=textmaker,
     )
     from rich import print as rprint
     rprint(f"[green]DOCX generado:[/] {output_path}")
@@ -270,6 +273,13 @@ def install():
         found.append(f"onlyoffice  →  {oo}")
     else:
         missing.append("onlyoffice (opcional, para --pdf --onlyoffice)")
+
+    # ── TextMaker / SoftMaker FreeOffice (opcional, para --pdf --textmaker) ──
+    tm = shutil.which("textmaker24") or shutil.which("textmaker")
+    if tm:
+        found.append(f"textmaker  →  {tm}")
+    else:
+        missing.append("textmaker (opcional, para --pdf --textmaker)")
 
     # ── Reporte ─────────────────────────────────────────────────
     from rich import print as rprint
@@ -325,6 +335,18 @@ def install():
             elif system == "windows":
                 rprint("    Descargar: https://www.onlyoffice.com/download-desktop.aspx")
                 rprint("    Instalar Document Server para usar documentserver-convert")
+
+        if any("textmaker" in m for m in missing):
+            rprint()
+            rprint("  [cyan]textmaker[/] (opcional, SoftMaker FreeOffice para conversión a PDF):")
+            if system == "linux":
+                rprint("    Descargar FreeOffice: https://www.freeoffice.com/en/download")
+                rprint("    Arch/CachyOS (AUR):  yay -S freeoffice")
+                rprint("    Debian/Ubuntu:       descargar .deb desde la web oficial")
+            elif system == "darwin":
+                rprint("    Descargar: https://www.freeoffice.com/en/download")
+            elif system == "windows":
+                rprint("    Descargar: https://www.freeoffice.com/en/download")
     else:
         rprint()
         rprint("[bold green]Todas las dependencias del sistema están instaladas.[/]")
